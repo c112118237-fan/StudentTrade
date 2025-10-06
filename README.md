@@ -1,4 +1,4 @@
-# StudentBookTrade 校園二手物品交換平台
+# StudentTrade 校園二手物品交換平台
 
 ### 第十二組
 
