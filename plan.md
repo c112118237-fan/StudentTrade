@@ -1,5 +1,4 @@
 # 甘特圖
----
 ```mermaid
 gantt
     title 校園二手平台開發時程 (共12週)
@@ -28,7 +27,6 @@ gantt
     簡報與展示準備      :2024-12-10, 12d
 ```
 # PERT/CPM 圖
----
 ```mermaid
 graph TD
     A[專案開始] --> B[需求分析]
@@ -50,7 +48,6 @@ graph TD
     O --> P[專案完成]
 ```
 # 工作分配
----
 ```mermaid
 gantt
     title 組員分工時程圖
