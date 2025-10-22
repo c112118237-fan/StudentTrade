@@ -2,10 +2,6 @@
 
 此文件包含 StudentTrade 系統的系統環境圖（DFD Context）與 DFD 圖0（Level 0）。
 ---
-## DFD 與系統環境圖 (Context Diagram)
-
-此文件包含 StudentTrade 系統的系統環境圖（DFD Context）與 DFD 圖0（Level 0）。
----
 
 ## 系統環境圖（Context Diagram - DFD Level: Context）
 
@@ -49,15 +45,15 @@ flowchart TB
   Admin[管理者]
 
   %% Processes
-  P1[(P1) 使用者管理]
-  P2[(P2) 商品管理]
-  P3[(P3) 交易與交換處理]
-  P4[(P4) 通知與日誌]
+  P1[ 使用者管理]
+  P2[ 商品管理]
+  P3[ 交易與交換處理]
+  P4[ 通知與日誌]
 
   %% Data stores
-  DS1[(D1) 使用者資料庫]
-  DS2[(D2) 商品資料庫]
-  DS3[(D3) 交易記錄]
+  DS1[使用者資料庫]
+  DS2[商品資料庫]
+  DS3[交易記錄]
 
   %% Flows
   User -->|註冊/登入/更新資料| P1
@@ -78,7 +74,6 @@ flowchart TB
 
   Admin -->|管理/審核| P2
   Admin -->|稽核| P3
-
 ```
 
 說明：
@@ -88,6 +83,3 @@ flowchart TB
 - P4 通知與日誌：負責發送系統通知、Email、以及記錄系統日誌。
 
 資料庫（Data Stores）至少包含使用者、商品與交易記錄三個資料庫。
-
-
-## 系統環境圖（Context Diagram - DFD Level: Context）
