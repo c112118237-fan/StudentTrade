@@ -1,25 +1,34 @@
 {% set p = product %}
 {% set placeholder_image = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23DBEAFE'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='28' fill='%231D4ED8' font-family='Arial'%3EStudentTrade%3C/text%3E%3C/svg%3E" %}
-<a href="{{ p.url|default('/products/1') }}" class="block bg-white rounded-xl shadow-card hover:shadow-cardHover transition-all floating">
-    <div class="relative aspect-square bg-secondaryLight overflow-hidden">
-        <img src="{{ p.image|default(placeholder_image) }}"
-             alt="{{ p.title|default('商品圖片') }}"
+<a href="{{ url_for('products.detail', id=p.id) }}" class="block bg-white rounded-xl shadow-card hover:shadow-cardHover transition-all floating">
+    <div class="relative aspect-square bg-secondaryLight overflow-hidden rounded-t-xl">
+        <img src="{{ p.primary_image }}"
+             alt="{{ p.title }}"
              class="w-full h-full object-cover">
         {% if p.status %}
-            {% set badge_classes = 'bg-green-500' %}
-            {% if p.status == '交易中' %}{% set badge_classes = 'bg-warning' %}{% endif %}
-            {% if p.status == '已售出' %}{% set badge_classes = 'bg-secondary' %}{% endif %}
+            {% set badge_classes = 'bg-success' %}
+            {% set badge_text = '刊登中' %}
+            {% if p.status == 'pending' %}
+                {% set badge_classes = 'bg-warning' %}
+                {% set badge_text = '交易中' %}
+            {% elif p.status == 'sold' %}
+                {% set badge_classes = 'bg-secondary' %}
+                {% set badge_text = '已售出' %}
+            {% elif p.status == 'inactive' %}
+                {% set badge_classes = 'bg-secondary' %}
+                {% set badge_text = '已下架' %}
+            {% endif %}
             <span class="absolute top-3 right-3 px-3 py-1 rounded text-white text-xs font-semibold {{ badge_classes }}">
-                {{ p.status }}
+                {{ badge_text }}
             </span>
         {% endif %}
     </div>
     <div class="p-4 space-y-2">
-        <h3 class="font-semibold text-secondaryDark text-lg leading-tight line-clamp-2">{{ p.title|default('MacBook Pro 2020') }}</h3>
-        <p class="text-primary font-bold text-xl">NT$ {{ p.price|default('25,000') }}</p>
+        <h3 class="font-semibold text-secondaryDark text-lg leading-tight line-clamp-2">{{ p.title }}</h3>
+        <p class="text-primary font-bold text-xl">NT$ {{ "%.2f"|format(p.price) }}</p>
         <div class="flex justify-between text-sm text-secondary">
-            <span>狀況：{{ p.condition|default('良好') }}</span>
-            <span>{{ p.time_ago|default('1天前') }}</span>
+            <span>狀況：{{ p.condition }}</span>
+            <span>{{ p.created_at.strftime('%m-%d') if p.created_at else '' }}</span>
         </div>
     </div>
 </a>

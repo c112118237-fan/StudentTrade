@@ -359,7 +359,7 @@ class ProductService:
         Returns:
             Pagination 物件
         """
-        query = Product.query.filter_by(seller_id=user_id)
+        query = Product.query.filter_by(user_id=user_id)
 
         if status:
             query = query.filter_by(status=status)
