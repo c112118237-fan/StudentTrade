@@ -5,71 +5,90 @@
                 <button class="md:hidden text-secondary" aria-label="開啟選單" data-menu-toggle>
                     ☰
                 </button>
-                <a href="{{ url_for('index') if 'index' in globals() else '/' }}" class="flex items-center gap-2 text-primary font-semibold text-lg">
+                <a href="{{ url_for('index') if 'index' in globals() else '/' }}"
+                    class="flex items-center gap-2 text-primary font-semibold text-lg">
                     <span>StudentTrade</span>
                 </a>
             </div>
             <div class="flex items-center gap-3">
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('products.create') if 'products' in globals() else '/products/new' }}"
-                       class="hidden md:inline-flex items-center gap-1 px-4 py-2 bg-primary text-white rounded-lg shadow-md hover:bg-primaryHover">
-                        <span>刊登商品</span>
-                    </a>
-                    <a href="{{ url_for('messages.index') if 'messages' in globals() else '/messages' }}" class="text-secondary text-sm font-medium" aria-label="通知">
-                        通知
-                    </a>
-                    <div class="relative" x-data="{ open: false }">
-                        <button @click="open = !open" class="flex items-center gap-2 text-secondaryDark font-medium hover:text-primary transition">
-                            <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm">
-                                {{ current_user.username[0]|upper if current_user.username else 'U' }}
-                            </div>
-                            <span class="hidden md:inline">{{ current_user.username|default('使用者') }}</span>
-                            <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 bg-white rounded-lg shadow-dropdown w-48 py-2">
-                            <a class="flex items-center gap-2 px-4 py-2 hover:bg-primaryLight transition" href="/cart">
-                                <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                </svg>
-                                <span>購物車</span>
-                            </a>
-                            <a class="flex items-center gap-2 px-4 py-2 hover:bg-primaryLight transition" href="/products/my">
-                                <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                                </svg>
-                                <span>賣場</span>
-                            </a>
-                            <a class="flex items-center gap-2 px-4 py-2 hover:bg-primaryLight transition" href="/auth/profile">
-                                <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
-                                <span>編輯個人資料</span>
-                            </a>
-                            <div class="border-t border-gray-200 my-2"></div>
-                            <form class="block" method="post" action="/auth/logout">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 hover:bg-primaryLight transition text-left">
-                                    <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                                    </svg>
-                                    <span>登出</span>
-                                </button>
-                            </form>
+                <a href="{{ url_for('products.create') if 'products' in globals() else '/products/new' }}"
+                    class="hidden md:inline-flex items-center gap-1 px-4 py-2 bg-primary text-white rounded-lg shadow-md hover:bg-primaryHover">
+                    <span>刊登商品</span>
+                </a>
+                <a href="{{ url_for('messages.index') if 'messages' in globals() else '/messages' }}"
+                    class="text-secondary text-sm font-medium" aria-label="聊聊">
+                    聊聊
+                </a>
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open"
+                        class="flex items-center gap-2 text-secondaryDark font-medium hover:text-primary transition">
+                        <div
+                            class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm">
+                            {{ current_user.username[0]|upper if current_user.username else 'U' }}
                         </div>
+                        <span class="hidden md:inline">{{ current_user.username|default('使用者') }}</span>
+                        <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': open }" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </button>
+                    <div x-show="open" @click.away="open = false" x-transition
+                        class="absolute right-0 mt-2 bg-white rounded-lg shadow-dropdown w-48 py-2">
+                        <a class="flex items-center gap-2 px-4 py-2 hover:bg-primaryLight transition" href="/cart">
+                            <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
+                                </path>
+                            </svg>
+                            <span>購物車</span>
+                        </a>
+                        <a class="flex items-center gap-2 px-4 py-2 hover:bg-primaryLight transition"
+                            href="/products/my">
+                            <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                            </svg>
+                            <span>賣場</span>
+                        </a>
+                        <a class="flex items-center gap-2 px-4 py-2 hover:bg-primaryLight transition"
+                            href="/auth/profile">
+                            <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            <span>編輯個人資料</span>
+                        </a>
+                        <div class="border-t border-gray-200 my-2"></div>
+                        <form class="block" method="post" action="/auth/logout">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit"
+                                class="w-full flex items-center gap-2 px-4 py-2 hover:bg-primaryLight transition text-left">
+                                <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                                    </path>
+                                </svg>
+                                <span>登出</span>
+                            </button>
+                        </form>
                     </div>
+                </div>
                 {% else %}
-                    <a href="/auth/login" class="text-secondary font-medium hover:text-primary">登入</a>
-                    <a href="/auth/register" class="px-4 py-2 bg-primary text-white rounded-lg shadow-md hover:bg-primaryHover">註冊</a>
+                <a href="/auth/login" class="text-secondary font-medium hover:text-primary">登入</a>
+                <a href="/auth/register"
+                    class="px-4 py-2 bg-primary text-white rounded-lg shadow-md hover:bg-primaryHover">註冊</a>
                 {% endif %}
             </div>
         </div>
 
         <div class="md:hidden hidden pb-4" data-mobile-menu>
             <div class="mt-3 flex items-center gap-3">
-                <a href="{{ url_for('products.create') if 'products' in globals() else '/products/new' }}" class="flex-1 text-center px-3 py-2 bg-primary text-white rounded-lg shadow-md">刊登商品</a>
-                <a href="/messages" class="px-3 py-2 bg-secondaryLight rounded-lg text-secondaryDark text-sm">通知</a>
+                <a href="{{ url_for('products.create') if 'products' in globals() else '/products/new' }}"
+                    class="flex-1 text-center px-3 py-2 bg-primary text-white rounded-lg shadow-md">刊登商品</a>
+                <a href="/messages" class="px-3 py-2 bg-secondaryLight rounded-lg text-secondaryDark text-sm">聊聊</a>
             </div>
             <div class="mt-3 grid grid-cols-2 gap-2 text-sm text-secondary">
                 <a class="px-3 py-2 rounded-md hover:bg-primaryLight" href="/products">首頁</a>

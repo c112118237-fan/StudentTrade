@@ -43,11 +43,15 @@ def chat(user_id):
     # 標記所有訊息為已讀
     MessageService.mark_conversation_as_read(current_user.id, user_id)
 
+    # 取得對話列表（用於側邊欄）
+    conversations = MessageService.get_conversations_list(current_user.id)
+
     return render_template(
         'messages/chat.html',
         other_user=other_user,
         messages=pagination.items,
-        pagination=pagination
+        pagination=pagination,
+        conversations=conversations
     )
 
 @bp.route('/send', methods=['POST'])

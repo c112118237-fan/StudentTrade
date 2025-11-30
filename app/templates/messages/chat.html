@@ -2,53 +2,59 @@
 {% block title %}聊天 - StudentTrade{% endblock %}
 
 {% block content %}
-{% set threads = threads|default([
-    {'user': '張三', 'snippet': '關於 Mac...', 'time': '5 分鐘前', 'unread': 2, 'active': True},
-    {'user': '李四', 'snippet': '可以面交嗎？', 'time': '1 小時前', 'unread': 0, 'active': False},
-    {'user': '王五', 'snippet': '好的謝謝', 'time': '昨天', 'unread': 0, 'active': False}
-], true) %}
-{% set messages = messages|default([
-    {'from_me': False, 'text': '嗨，這個商品還在嗎？', 'time': '10:30'},
-    {'from_me': True, 'text': '在的，歡迎詢問', 'time': '10:32'},
-    {'from_me': False, 'text': '可以面交嗎？', 'time': '10:35'},
-    {'from_me': True, 'text': '可以，台北車站方便嗎', 'time': '10:36'}
-], true) %}
-
 <section class="py-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="bg-white rounded-xl shadow-card overflow-hidden grid grid-cols-1 md:grid-cols-3">
-            <aside class="border-r border-secondaryLight max-h-[80vh] overflow-y-auto chat-scroll">
+            <aside class="border-r border-secondaryLight max-h-[80vh] overflow-y-auto chat-scroll hidden md:block">
                 <div class="p-4 font-semibold text-secondaryDark">對話列表</div>
                 <div class="space-y-2 p-4 pt-0">
-                    {% for thread in threads %}
-                        <a href="/messages/{{ loop.index }}" class="block rounded-lg p-3 {{ 'bg-primaryLight' if thread.active else 'bg-white' }} {{ 'border border-primary' if thread.active else 'border border-secondaryLight' }}">
-                            <div class="flex justify-between items-center">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full {{ 'bg-primary' if thread.unread else 'bg-secondaryLight' }}"></span>
-                                    <span class="font-medium text-secondaryDark">{{ thread.user }} {% if thread.unread %}({{ thread.unread }}){% endif %}</span>
-                                </div>
-                                <span class="text-xs text-secondary">{{ thread.time }}</span>
+                    {% if conversations %}
+                    {% for conversation in conversations %}
+                    <a href="{{ url_for('messages.chat', user_id=conversation.user.id) }}"
+                        class="block rounded-lg p-3 {{ 'bg-primaryLight' if conversation.user.id == other_user.id else 'bg-white' }} {{ 'border border-primary' if conversation.user.id == other_user.id else 'border border-secondaryLight' }} hover:border-primary transition">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="w-2 h-2 rounded-full {{ 'bg-primary' if conversation.unread_count > 0 else 'bg-secondaryLight' }}"></span>
+                                <span class="font-medium text-secondaryDark">{{ conversation.user.username }} {% if
+                                    conversation.unread_count > 0 %}({{ conversation.unread_count }}){% endif %}</span>
                             </div>
-                            <p class="text-secondary text-sm mt-1 line-clamp-1">{{ thread.snippet }}</p>
-                        </a>
+                            <span class="text-xs text-secondary">{{ conversation.last_message.created_at.strftime('%m/%d
+                                %H:%M') }}</span>
+                        </div>
+                        <p class="text-secondary text-sm mt-1 line-clamp-1">{{ conversation.last_message.content }}</p>
+                    </a>
                     {% endfor %}
+                    {% else %}
+                    <div class="text-center py-8 text-secondary">
+                        <p>尚無對話記錄</p>
+                    </div>
+                    {% endif %}
                 </div>
             </aside>
 
-            <div class="md:col-span-2 flex flex-col">
-                <header class="px-6 py-4 border-b border-secondaryLight flex items-center justify-between">
+            <div class="md:col-span-2 flex flex-col h-[80vh]">
+                <header
+                    class="px-6 py-4 border-b border-secondaryLight flex items-center justify-between bg-white z-10">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-primaryLight flex items-center justify-center text-lg">用戶</div>
+                        <div
+                            class="w-10 h-10 rounded-full bg-primaryLight flex items-center justify-center text-lg font-bold text-primary">
+                            {{ other_user.username[0]|upper if other_user.username else 'U' }}
+                        </div>
                         <div>
-                            <p class="font-semibold text-secondaryDark">張三</p>
-                            <p class="text-sm text-secondary">關於商品：MacBook Pro 2020</p>
+                            <p class="font-semibold text-secondaryDark">{{ other_user.username }}</p>
+                            {# <p class="text-sm text-secondary">關於商品：MacBook Pro 2020</p> #}
                         </div>
                     </div>
-                    <button class="text-secondary hover:text-primary">⋮ 更多</button>
+                    <a href="{{ url_for('messages.index') }}"
+                        class="md:hidden text-secondary hover:text-primary">返回列表</a>
                 </header>
 
+                {# 商品資訊區塊 (暫時隱藏，因為目前沒有傳遞 product) #}
+                {#
                 <div class="px-6 py-4 border-b border-secondaryLight">
-                    <div class="flex items-center gap-3 p-3 rounded-lg border border-secondaryLight bg-secondaryLight/40">
+                    <div
+                        class="flex items-center gap-3 p-3 rounded-lg border border-secondaryLight bg-secondaryLight/40">
                         <div class="w-12 h-12 bg-secondaryLight rounded-lg"></div>
                         <div class="flex-1">
                             <p class="font-medium text-secondaryDark">MacBook Pro 2020</p>
@@ -57,26 +63,44 @@
                         <a class="text-primary text-sm hover:text-primaryHover" href="/products/1">查看商品</a>
                     </div>
                 </div>
+                #}
 
-                <div class="flex-1 px-6 py-4 space-y-4 overflow-y-auto chat-scroll" style="max-height: 50vh;">
+                <div class="flex-1 px-6 py-4 space-y-4 overflow-y-auto chat-scroll bg-gray-50" id="message-container">
                     {% for m in messages %}
-                        <div class="flex {{ 'justify-end' if m.from_me else 'justify-start' }}">
-                            <div class="max-w-[70%] space-y-1">
-                                <div class="{{ 'bg-primary text-white rounded-2xl rounded-tr-none' if m.from_me else 'bg-secondaryLight text-secondaryDark rounded-2xl rounded-tl-none' }} px-4 py-3">
-                                    {{ m.text }}
-                                </div>
-                                <div class="text-xs text-secondary {{ 'text-right' if m.from_me else '' }}">{{ m.time }}</div>
+                    <div class="flex {{ 'justify-end' if m.sender_id == current_user.id else 'justify-start' }}">
+                        <div class="max-w-[70%] space-y-1">
+                            <div
+                                class="{{ 'bg-primary text-white rounded-2xl rounded-tr-none' if m.sender_id == current_user.id else 'bg-white border border-secondaryLight text-secondaryDark rounded-2xl rounded-tl-none' }} px-4 py-3 shadow-sm">
+                                {{ m.content }}
                             </div>
+                            <div
+                                class="text-xs text-secondary {{ 'text-right' if m.sender_id == current_user.id else '' }}">
+                                {{ m.created_at.strftime('%H:%M') }}</div>
                         </div>
+                    </div>
                     {% endfor %}
                 </div>
 
-                <form class="px-6 py-4 border-t border-secondaryLight flex items-end gap-3">
-                    <textarea rows="2" class="flex-1 px-4 py-3 rounded-lg border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary resize-none" placeholder="輸入訊息..."></textarea>
-                    <button type="submit" class="px-4 py-3 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover">發送</button>
+                <form class="px-6 py-4 border-t border-secondaryLight flex items-end gap-3 bg-white" method="post"
+                    action="{{ url_for('messages.send') }}">
+                    <input type="hidden" name="receiver_id" value="{{ other_user.id }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <textarea name="content" rows="1"
+                        class="flex-1 px-4 py-3 rounded-lg border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary resize-none"
+                        placeholder="輸入訊息..." required></textarea>
+                    <button type="submit"
+                        class="px-4 py-3 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover">發送</button>
                 </form>
             </div>
         </div>
     </div>
 </section>
+
+<script>
+    // 自動捲動到底部
+    const messageContainer = document.getElementById('message-container');
+    if (messageContainer) {
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+</script>
 {% endblock %}
