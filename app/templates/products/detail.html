@@ -6,20 +6,26 @@
 
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
     <div class="text-sm text-secondary flex items-center gap-2">
-        <a class="hover:text-primary" href="/">首頁</a> › <a class="hover:text-primary" href="/products?category={{ main_product.category_id }}">{{ main_product.category.name }}</a> › <span class="text-secondaryDark">{{ main_product.title }}</span>
+        <a class="hover:text-primary" href="/">首頁</a> › <a class="hover:text-primary"
+            href="/products?category={{ main_product.category_id }}">{{ main_product.category.name }}</a> › <span
+            class="text-secondaryDark">{{ main_product.title }}</span>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 bg-white rounded-xl shadow-card p-6">
         <div class="space-y-4">
-            <div class="relative aspect-square bg-secondaryLight rounded-xl overflow-hidden flex items-center justify-center">
-                <img src="{{ main_product.primary_image }}" alt="{{ main_product.title }}" class="w-full h-full object-cover">
-                <div class="absolute bottom-3 right-3 px-3 py-1 rounded bg-success text-white text-xs font-semibold">可放大</div>
+            <div
+                class="relative aspect-square bg-secondaryLight rounded-xl overflow-hidden flex items-center justify-center">
+                <img src="{{ main_product.primary_image }}" alt="{{ main_product.title }}"
+                    class="w-full h-full object-cover">
+                <div class="absolute bottom-3 right-3 px-3 py-1 rounded bg-success text-white text-xs font-semibold">可放大
+                </div>
             </div>
             <div class="grid grid-cols-5 gap-3">
                 {% for image in main_product.images.all()[:5] %}
-                    <button class="aspect-square rounded-lg border border-secondaryLight bg-secondaryLight hover:border-primary overflow-hidden">
-                        <img src="{{ image.image_url }}" alt="{{ main_product.title }}" class="w-full h-full object-cover">
-                    </button>
+                <button
+                    class="aspect-square rounded-lg border border-secondaryLight bg-secondaryLight hover:border-primary overflow-hidden">
+                    <img src="{{ image.image_url }}" alt="{{ main_product.title }}" class="w-full h-full object-cover">
+                </button>
                 {% endfor %}
             </div>
         </div>
@@ -27,15 +33,18 @@
         <div class="space-y-4">
             <div class="flex items-center gap-3">
                 <h1 class="text-2xl font-semibold text-secondaryDark">{{ main_product.title }}</h1>
-                <span class="px-3 py-1 rounded text-white text-sm font-semibold {% if main_product.status == 'pending' %}bg-warning{% elif main_product.status == 'sold' %}bg-secondary{% else %}bg-success{% endif %}">
-                    {% if main_product.status == 'active' %}刊登中{% elif main_product.status == 'pending' %}交易中{% elif main_product.status == 'sold' %}已售出{% else %}{{ main_product.status }}{% endif %}
+                <span
+                    class="px-3 py-1 rounded text-white text-sm font-semibold {% if main_product.status == 'pending' %}bg-warning{% elif main_product.status == 'sold' %}bg-secondary{% else %}bg-success{% endif %}">
+                    {% if main_product.status == 'active' %}刊登中{% elif main_product.status == 'pending' %}交易中{% elif
+                    main_product.status == 'sold' %}已售出{% else %}{{ main_product.status }}{% endif %}
                 </span>
             </div>
             <p class="text-3xl font-bold text-primary">NT$ {{ "%.2f"|format(main_product.price) }}</p>
             <div class="grid grid-cols-2 gap-3 text-sm text-secondary">
                 <div>商品狀況：<span class="font-medium text-secondaryDark">● {{ main_product.condition }}</span></div>
                 <div>商品分類：<span class="font-medium text-secondaryDark">{{ main_product.category.name }}</span></div>
-                <div>上架時間：<span class="font-medium text-secondaryDark">{{ main_product.created_at.strftime('%Y-%m-%d %H:%M') if main_product.created_at else '' }}</span></div>
+                <div>上架時間：<span class="font-medium text-secondaryDark">{{ main_product.created_at.strftime('%Y-%m-%d
+                        %H:%M') if main_product.created_at else '' }}</span></div>
                 <div>瀏覽次數：<span class="font-medium text-secondaryDark">{{ main_product.view_count }} 次</span></div>
             </div>
             <div class="space-y-2">
@@ -61,8 +70,35 @@
             </div>
             {% endif %}
             <div class="flex flex-wrap gap-3 pt-2">
-                <button class="flex items-center gap-2 px-5 py-3 rounded-lg border border-primary text-primary hover:bg-primaryLight">聯繫賣家</button>
-                <button class="flex items-center gap-2 px-5 py-3 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover">發起交易</button>
+                {# 聯繫賣家按鈕 #}
+                {% if current_user.is_authenticated %}
+                {% if current_user.id == main_product.seller.id %}
+                <button disabled
+                    class="flex items-center gap-2 px-5 py-3 rounded-lg border border-secondaryLight text-secondary cursor-not-allowed"
+                    title="這是您的商品">聯繫賣家</button>
+                {% else %}
+                <a href="{{ url_for('messages.chat', user_id=main_product.seller.id) }}"
+                    class="flex items-center gap-2 px-5 py-3 rounded-lg border border-primary text-primary hover:bg-primaryLight">聯繫賣家</a>
+                {% endif %}
+                {% else %}
+                <a href="{{ url_for('auth.login', next=request.path) }}"
+                    class="flex items-center gap-2 px-5 py-3 rounded-lg border border-primary text-primary hover:bg-primaryLight">聯繫賣家</a>
+                {% endif %}
+
+                {# 發起交易按鈕 #}
+                {% if current_user.is_authenticated %}
+                {% if current_user.id == main_product.seller.id %}
+                <button disabled
+                    class="flex items-center gap-2 px-5 py-3 rounded-lg bg-secondary text-white shadow-md cursor-not-allowed"
+                    title="這是您的商品">發起交易</button>
+                {% else %}
+                <button
+                    class="flex items-center gap-2 px-5 py-3 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover">發起交易</button>
+                {% endif %}
+                {% else %}
+                <a href="{{ url_for('auth.login', next=request.path) }}"
+                    class="flex items-center gap-2 px-5 py-3 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover">發起交易</a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -70,17 +106,20 @@
     <div class="bg-white rounded-xl shadow-card p-6">
         <h2 class="text-lg font-semibold text-secondaryDark mb-4">賣家資訊</h2>
         <div class="flex items-center gap-4">
-            <div class="w-16 h-16 rounded-full bg-primaryLight flex items-center justify-center text-xl font-semibold text-primary">
+            <div
+                class="w-16 h-16 rounded-full bg-primaryLight flex items-center justify-center text-xl font-semibold text-primary">
                 {{ main_product.seller.username[0]|upper if main_product.seller.username else '?' }}
             </div>
             <div class="flex-1">
                 <p class="font-semibold text-secondaryDark">{{ main_product.seller.username }}</p>
-                <p class="text-sm text-secondary">會員自：{{ main_product.seller.created_at.strftime('%Y-%m-%d') if main_product.seller.created_at else '未知' }}</p>
+                <p class="text-sm text-secondary">會員自：{{ main_product.seller.created_at.strftime('%Y-%m-%d') if
+                    main_product.seller.created_at else '未知' }}</p>
                 {% if main_product.seller.department %}
                 <p class="text-sm text-secondary">{{ main_product.seller.department }}</p>
                 {% endif %}
                 <div class="flex gap-3 mt-2 text-sm">
-                    <a class="text-primary hover:text-primaryHover" href="/products?user={{ main_product.seller.id }}">查看所有商品</a>
+                    <a class="text-primary hover:text-primaryHover"
+                        href="/products?user={{ main_product.seller.id }}">查看所有商品</a>
                 </div>
             </div>
         </div>
@@ -90,11 +129,12 @@
     <div class="bg-white rounded-xl shadow-card p-6">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-secondaryDark">相似商品推薦</h2>
-            <a class="text-primary text-sm hover:text-primaryHover" href="/products?category={{ main_product.category_id }}">查看更多</a>
+            <a class="text-primary text-sm hover:text-primaryHover"
+                href="/products?category={{ main_product.category_id }}">查看更多</a>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             {% for product in similar_products %}
-                {% include 'components/product_card.html' %}
+            {% include 'components/product_card.html' %}
             {% endfor %}
         </div>
     </div>
