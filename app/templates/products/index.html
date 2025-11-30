@@ -2,156 +2,195 @@
 {% block title %}商品列表 - StudentTrade{% endblock %}
 
 {% block content %}
-{% set categories = [
-{'name': '書籍'},
-{'name': '文具'},
-{'name': '電子產品'},
-{'name': '生活用品'},
-{'name': '運動'},
-{'name': '其他'}
-] %}
-{% set product_list = products|default([
-{'title': 'MacBook Pro 2020 13吋', 'price': '25,000', 'condition': '良好', 'time_ago': '1天前', 'url': '/products/1',
-'status': '刊登中'},
-{'title': 'Python 程式設計（二手書）', 'price': '300', 'condition': '近全新', 'time_ago': '2天前', 'url': '/products/2'},
-{'title': '計算機', 'price': '500', 'condition': '普通', 'time_ago': '3天前', 'url': '/products/3'},
-{'title': '筆記本組合', 'price': '50', 'condition': '全新', 'time_ago': '5天前', 'url': '/products/4'}
-], true) %}
-
 <section class="bg-white/70 border-b border-secondaryLight">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
+        <!-- Search Section -->
         <div class="space-y-3">
             <h1 class="text-2xl font-semibold text-secondaryDark">搜尋商品</h1>
             <p class="text-secondary text-sm">輸入關鍵字或分類，快速找到你想要的物品</p>
-            <div class="w-full md:w-3/4 lg:w-1/2 relative">
-                <input data-search-input type="search" placeholder="搜尋商品、分類、品牌..."
-                    class="w-full px-4 py-3 rounded-lg border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary">
-                <div data-search-suggestions
-                    class="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-card p-2 hidden"></div>
-            </div>
+            <form method="get" action="{{ url_for('products.index') }}" class="w-full md:w-3/4 lg:w-1/2 flex gap-2">
+                <input name="search" type="search" placeholder="搜尋商品、分類、品牌..."
+                    value="{{ request.args.get('search', '') }}"
+                    class="flex-1 px-4 py-3 rounded-lg border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary">
+                <button type="submit"
+                    class="px-6 py-3 bg-primary text-white rounded-lg shadow-md hover:bg-primaryHover whitespace-nowrap">
+                    搜尋
+                </button>
+                <!-- Preserve other filters -->
+                {% if request.args.get('category') %}
+                <input type="hidden" name="category" value="{{ request.args.get('category') }}">
+                {% endif %}
+                {% if request.args.get('condition') %}
+                <input type="hidden" name="condition" value="{{ request.args.get('condition') }}">
+                {% endif %}
+                {% if request.args.get('min_price') %}
+                <input type="hidden" name="min_price" value="{{ request.args.get('min_price') }}">
+                {% endif %}
+                {% if request.args.get('max_price') %}
+                <input type="hidden" name="max_price" value="{{ request.args.get('max_price') }}">
+                {% endif %}
+                {% if request.args.get('sort_by') %}
+                <input type="hidden" name="sort_by" value="{{ request.args.get('sort_by') }}">
+                {% endif %}
+                {% if request.args.get('order') %}
+                <input type="hidden" name="order" value="{{ request.args.get('order') }}">
+                {% endif %}
+            </form>
         </div>
+
+        <!-- Category Quick Links -->
         <div class="flex flex-wrap gap-2 items-center">
-            <span class="text-secondary text-sm">分類快速導航</span>
+            <span class="text-secondary text-sm font-medium">分類：</span>
             {% for cat in categories %}
-            <a href="/products?category={{ cat.name }}"
-                class="px-3 py-2 rounded-full border border-secondaryLight text-secondary hover:border-primary hover:text-primary">
+            <a href="{{ url_for('products.index', category=cat.id, search=request.args.get('search', ''), condition=request.args.get('condition'), min_price=request.args.get('min_price'), max_price=request.args.get('max_price'), sort_by=request.args.get('sort_by'), order=request.args.get('order')) }}"
+                class="px-3 py-2 rounded-full border {{ 'border-primary bg-primary text-white font-medium' if request.args.get('category') == cat.id|string else 'border-secondaryLight text-secondary hover:border-primary hover:text-primary' }}">
                 {{ cat.name }}
             </a>
             {% endfor %}
+            {% if request.args.get('category') %}
+            <a href="{{ url_for('products.index', search=request.args.get('search', ''), condition=request.args.get('condition'), min_price=request.args.get('min_price'), max_price=request.args.get('max_price'), sort_by=request.args.get('sort_by'), order=request.args.get('order')) }}"
+                class="px-3 py-2 rounded-full border border-danger text-danger hover:bg-danger hover:text-white">
+                清除 ×
+            </a>
+            {% endif %}
         </div>
+
+        <!-- Filters Section -->
+        <form method="get" action="{{ url_for('products.index') }}" id="filter-form"
+            class="bg-white rounded-xl shadow-sm p-4 space-y-4">
+            <!-- Preserve search -->
+            {% if request.args.get('search') %}
+            <input type="hidden" name="search" value="{{ request.args.get('search') }}">
+            {% endif %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Category Filter -->
+                <div>
+                    <label class="block text-sm font-semibold text-secondaryDark mb-2">分類</label>
+                    <select name="category"
+                        class="w-full px-3 py-2 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary"
+                        onchange="document.getElementById('filter-form').submit()">
+                        <option value="">全部分類</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {{ 'selected' if request.args.get('category')==cat.id|string
+                            else '' }}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Condition Filter -->
+                <div>
+                    <label class="block text-sm font-semibold text-secondaryDark mb-2">商品狀況</label>
+                    <select name="condition"
+                        class="w-full px-3 py-2 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary"
+                        onchange="document.getElementById('filter-form').submit()">
+                        <option value="">全部狀況</option>
+                        {% for cond in ['全新', '近全新', '良好', '普通'] %}
+                        <option value="{{ cond }}" {{ 'selected' if request.args.get('condition')==cond else '' }}>{{
+                            cond }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Price Range -->
+                <div>
+                    <label class="block text-sm font-semibold text-secondaryDark mb-2">價格範圍</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="min_price" placeholder="最低"
+                            value="{{ request.args.get('min_price', '') }}"
+                            class="w-1/2 px-3 py-2 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary">
+                        <span class="text-secondary">~</span>
+                        <input type="number" name="max_price" placeholder="最高"
+                            value="{{ request.args.get('max_price', '') }}"
+                            class="w-1/2 px-3 py-2 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary">
+                    </div>
+                </div>
+
+                <!-- Sort -->
+                <div>
+                    <label class="block text-sm font-semibold text-secondaryDark mb-2">排序方式</label>
+                    <select name="sort" id="sort-select"
+                        onchange="const parts = this.value.split('-'); document.getElementsByName('sort_by')[0].value = parts[0]; document.getElementsByName('order')[0].value = parts[1]; document.getElementById('filter-form').submit();"
+                        class="w-full px-3 py-2 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary">
+                        {% set current_sort = request.args.get('sort_by', 'created_at') + '-' +
+                        request.args.get('order', 'desc') %}
+                        <option value="created_at-desc" {{ 'selected' if current_sort=='created_at-desc' else '' }}>最新優先
+                        </option>
+                        <option value="price-asc" {{ 'selected' if current_sort=='price-asc' else '' }}>價格：低到高</option>
+                        <option value="price-desc" {{ 'selected' if current_sort=='price-desc' else '' }}>價格：高到低
+                        </option>
+                    </select>
+                    <input type="hidden" name="sort_by" value="{{ request.args.get('sort_by', 'created_at') }}">
+                    <input type="hidden" name="order" value="{{ request.args.get('order', 'desc') }}">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                {% if request.args.get('category') or request.args.get('condition') or request.args.get('min_price') or
+                request.args.get('max_price') or request.args.get('sort_by') != 'created_at' or
+                request.args.get('order') != 'desc' %}
+                <a href="{{ url_for('products.index', search=request.args.get('search', '')) }}"
+                    class="px-4 py-2 rounded-lg border border-secondaryLight text-secondary hover:bg-gray-50">
+                    清除所有篩選
+                </a>
+                {% endif %}
+                <button type="submit" class="px-4 py-2 rounded-lg bg-primary text-white hover:bg-primaryHover">
+                    套用篩選
+                </button>
+            </div>
+        </form>
     </div>
 </section>
 
 <section class="py-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <aside class="bg-white rounded-xl shadow-card p-5 space-y-6">
-                <div>
-                    <p class="font-semibold text-secondaryDark mb-3">分類</p>
-                    <div class="space-y-2 text-secondary">
-                        {% for cat in categories %}
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox"
-                                class="rounded border-secondaryLight text-primary focus:ring-primary">
-                            <span>{{ cat.name }}</span>
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div>
-                <div class="space-y-2">
-                    <p class="font-semibold text-secondaryDark">價格範圍</p>
-                    <div class="flex items-center gap-3 text-sm">
-                        <input type="number" placeholder="100"
-                            class="w-1/2 px-3 py-2 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary">
-                        <span>—</span>
-                        <input type="number" placeholder="50000"
-                            class="w-1/2 px-3 py-2 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary">
-                    </div>
-                </div>
-                <div>
-                    <p class="font-semibold text-secondaryDark mb-3">商品狀況</p>
-                    <div class="space-y-2 text-secondary">
-                        {% for label in ['全新', '近全新', '良好', '普通'] %}
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" class="rounded border-secondaryLight text-primary focus:ring-primary"
-                                {% if loop.index < 3 %}checked{% endif %}>
-                            <span>{{ label }}</span>
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div>
-                <button
-                    class="w-full bg-primary text-white rounded-lg py-2.5 shadow-md hover:bg-primaryHover">套用篩選</button>
-            </aside>
-
-            <div class="lg:col-span-3 space-y-6">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <h1 class="text-xl font-semibold text-secondaryDark">商品列表</h1>
-                        <p class="text-secondary text-sm">找到 {{ product_list|length }} 項商品</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <label class="text-sm text-secondary">排序</label>
-                        <select
-                            class="px-3 py-2 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary">
-                            <option>最新優先</option>
-                            <option>價格：低到高</option>
-                            <option>價格：高到低</option>
-                            <option>熱門程度</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                    {% for product in product_list %}
-                    {% include 'components/product_card.html' with context %}
-                    {% endfor %}
-                </div>
-
-                {% if pagination.pages > 1 %}
-                <div class="flex justify-center items-center gap-2 pt-4">
-                    {# 上一頁 #}
-                    {% if pagination.has_prev %}
-                    <a href="{{ url_for('products.index', page=pagination.prev_num, search=request.args.get('search'), category=request.args.get('category'), condition=request.args.get('condition'), min_price=request.args.get('min_price'), max_price=request.args.get('max_price'), sort_by=request.args.get('sort_by'), order=request.args.get('order')) }}"
-                        class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">
-                        &larr;
-                    </a>
-                    {% else %}
-                    <span
-                        class="px-3 py-2 rounded border border-secondaryLight text-gray-300 cursor-not-allowed">&larr;</span>
-                    {% endif %}
-
-                    {# 頁碼 #}
-                    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1)
-                    %}
-                    {% if page_num %}
-                    {% if page_num == pagination.page %}
-                    <span class="px-3 py-2 rounded bg-primary text-white shadow">{{ page_num }}</span>
-                    {% else %}
-                    <a href="{{ url_for('products.index', page=page_num, search=request.args.get('search'), category=request.args.get('category'), condition=request.args.get('condition'), min_price=request.args.get('min_price'), max_price=request.args.get('max_price'), sort_by=request.args.get('sort_by'), order=request.args.get('order')) }}"
-                        class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">
-                        {{ page_num }}
-                    </a>
-                    {% endif %}
-                    {% else %}
-                    <span class="text-secondary">...</span>
-                    {% endif %}
-                    {% endfor %}
-
-                    {# 下一頁 #}
-                    {% if pagination.has_next %}
-                    <a href="{{ url_for('products.index', page=pagination.next_num, search=request.args.get('search'), category=request.args.get('category'), condition=request.args.get('condition'), min_price=request.args.get('min_price'), max_price=request.args.get('max_price'), sort_by=request.args.get('sort_by'), order=request.args.get('order')) }}"
-                        class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">
-                        &rarr;
-                    </a>
-                    {% else %}
-                    <span
-                        class="px-3 py-2 rounded border border-secondaryLight text-gray-300 cursor-not-allowed">&rarr;</span>
-                    {% endif %}
-                </div>
-                {% endif %}
-            </div>
+        <!-- Product Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {% for product in products %}
+            {% include 'components/product_card.html' with context %}
+            {% endfor %}
         </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <div class="flex justify-center items-center gap-2 pt-8">
+            {# 上一頁 #}
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('products.index', page=pagination.prev_num, search=request.args.get('search'), category=request.args.get('category'), condition=request.args.get('condition'), min_price=request.args.get('min_price'), max_price=request.args.get('max_price'), sort_by=request.args.get('sort_by'), order=request.args.get('order')) }}"
+                class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">
+                &larr;
+            </a>
+            {% else %}
+            <span class="px-3 py-2 rounded border border-secondaryLight text-gray-300 cursor-not-allowed">&larr;</span>
+            {% endif %}
+
+            {# 頁碼 #}
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+            {% if page_num %}
+            {% if page_num == pagination.page %}
+            <span class="px-3 py-2 rounded bg-primary text-white shadow">{{ page_num }}</span>
+            {% else %}
+            <a href="{{ url_for('products.index', page=page_num, search=request.args.get('search'), category=request.args.get('category'), condition=request.args.get('condition'), min_price=request.args.get('min_price'), max_price=request.args.get('max_price'), sort_by=request.args.get('sort_by'), order=request.args.get('order')) }}"
+                class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">
+                {{ page_num }}
+            </a>
+            {% endif %}
+            {% else %}
+            <span class="text-secondary">...</span>
+            {% endif %}
+            {% endfor %}
+
+            {# 下一頁 #}
+            {% if pagination.has_next %}
+            <a href="{{ url_for('products.index', page=pagination.next_num, search=request.args.get('search'), category=request.args.get('category'), condition=request.args.get('condition'), min_price=request.args.get('min_price'), max_price=request.args.get('max_price'), sort_by=request.args.get('sort_by'), order=request.args.get('order')) }}"
+                class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">
+                &rarr;
+            </a>
+            {% else %}
+            <span class="px-3 py-2 rounded border border-secondaryLight text-gray-300 cursor-not-allowed">&rarr;</span>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
 </section>
 {% endblock %}

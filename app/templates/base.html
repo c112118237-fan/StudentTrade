@@ -79,20 +79,16 @@
         socket.on('update_unread_count', function (data) {
             console.log('Global unread count update:', data.count);
 
-            // Update badge elements by ID
-            const desktopBadge = document.getElementById('unread-badge-desktop');
-            const mobileBadge = document.getElementById('unread-badge-mobile');
-
-            [desktopBadge, mobileBadge].forEach(badge => {
-                if (badge) {
-                    if (data.count > 0) {
-                        badge.textContent = data.count <= 9 ? data.count : '9+';
-                        badge.classList.remove('hidden');
-                    } else {
-                        badge.classList.add('hidden');
-                    }
+            // Update badge element by ID
+            const badge = document.getElementById('unread-badge-desktop');
+            if (badge) {
+                if (data.count > 0) {
+                    badge.textContent = data.count <= 9 ? data.count : '9+';
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
                 }
-            });
+            }
         });
 
         // Handle new message notifications (when user is not in chat page)
