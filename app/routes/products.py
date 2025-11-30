@@ -33,8 +33,14 @@ def index():
     condition = request.args.get('condition', None)
     min_price = request.args.get('min_price', None, type=float)
     max_price = request.args.get('max_price', None, type=float)
-    sort_by = request.args.get('sort_by', 'created_at')
-    order = request.args.get('order', 'desc')
+    
+    # Handle combined sort parameter (e.g., "price-asc")
+    sort_param = request.args.get('sort', '')
+    if sort_param and '-' in sort_param:
+        sort_by, order = sort_param.split('-', 1)
+    else:
+        sort_by = request.args.get('sort_by', 'created_at')
+        order = request.args.get('order', 'desc')
 
     # 取得商品列表
     pagination = ProductService.get_products(
