@@ -1,6 +1,6 @@
 from flask import Flask, render_template
 from app.config import config
-from app.extensions import db, login_manager, migrate, csrf
+from app.extensions import db, login_manager, migrate, csrf, socketio
 from datetime import datetime
 
 def create_app(config_name='default'):
@@ -13,6 +13,7 @@ def create_app(config_name='default'):
     login_manager.init_app(app)
     migrate.init_app(app, db)
     csrf.init_app(app)
+    socketio.init_app(app, cors_allowed_origins="*")
 
     # 註冊 Blueprints
     from app.routes import auth, products, transactions, messages, reviews, notifications
@@ -42,6 +43,9 @@ def create_app(config_name='default'):
 
     # 註冊 context processors
     register_context_processors(app)
+
+    # 註冊 SocketIO 事件
+    from app.events import messages as message_events
 
     return app
 

@@ -97,10 +97,139 @@
 </section>
 
 <script>
-    // 自動捲動到底部
-    const messageContainer = document.getElementById('message-container');
-    if (messageContainer) {
-        messageContainer.scrollTop = messageContainer.scrollHeight;
+    (function () {
+        // Initialize Socket.IO
+        const socket = io();
+        const otherUserId = {{ other_user.id | tojson }};
+        const currentUserId = {{ current_user.id | tojson }};
+        const messageContainer = document.getElementById('message-container');
+        const messageForm = document.querySelector('form[action*="send"]');
+        const messageInput = document.querySelector('textarea[name="content"]');
+
+    // Auto-scroll to bottom function
+    function scrollToBottom() {
+        if (messageContainer) {
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
     }
+
+    // Initial scroll to bottom
+    scrollToBottom();
+
+    // Connect to WebSocket
+    socket.on('connect', function () {
+        console.log('Connected to WebSocket');
+
+        // Join the conversation room
+        socket.emit('join_conversation', {
+            other_user_id: otherUserId
+        });
+
+        // Join personal room for unread notifications
+        socket.emit('join_user_room');
+
+        // Mark messages as read
+        socket.emit('mark_as_read', {
+            other_user_id: otherUserId
+        });
+    });
+
+    // Handle joining conversation
+    socket.on('joined_conversation', function (data) {
+        console.log('Joined conversation room:', data.room);
+    });
+
+    // Handle incoming messages
+    socket.on('new_message', function (data) {
+        console.log('Received message:', data);
+
+        // Create message element
+        const isFromMe = data.sender_id === currentUserId;
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex ${isFromMe ? 'justify-end' : 'justify-start'}`;
+
+        messageDiv.innerHTML = `
+                <div class="max-w-[70%] space-y-1">
+                    <div class="${isFromMe ? 'bg-primary text-white rounded-2xl rounded-tr-none' : 'bg-white border border-secondaryLight text-secondaryDark rounded-2xl rounded-tl-none'} px-4 py-3 shadow-sm">
+                        ${escapeHtml(data.content)}
+                    </div>
+                    <div class="text-xs text-secondary ${isFromMe ? 'text-right' : ''}">
+                        ${data.created_at}
+                    </div>
+                </div>
+            `;
+
+        messageContainer.appendChild(messageDiv);
+        scrollToBottom();
+
+        // If message is from other user, mark as read
+        if (!isFromMe) {
+            socket.emit('mark_as_read', {
+                other_user_id: otherUserId
+            });
+        }
+    });
+
+    // Handle unread count updates
+    socket.on('update_unread_count', function (data) {
+        console.log('Unread count updated:', data.count);
+
+        // Update the badge in navbar (if exists)
+        const badges = document.querySelectorAll('.absolute.bg-danger');
+        badges.forEach(badge => {
+            if (data.count > 0) {
+                badge.textContent = data.count <= 9 ? data.count : '9+';
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        });
+    });
+
+    // Handle form submission
+    if (messageForm) {
+        messageForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const content = messageInput.value.trim();
+            if (!content) return;
+
+            // Send message via WebSocket
+            socket.emit('send_message', {
+                receiver_id: otherUserId,
+                content: content
+            });
+
+            // Clear input
+            messageInput.value = '';
+            messageInput.focus();
+        });
+    }
+
+    // Handle disconnection
+    socket.on('disconnect', function () {
+        console.log('Disconnected from WebSocket');
+    });
+
+    // Handle errors
+    socket.on('error', function (data) {
+        console.error('Socket error:', data.message);
+        alert('Error: ' + data.message);
+    });
+
+    // Utility function to escape HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Leave room when navigating away
+    window.addEventListener('beforeunload', function () {
+        socket.emit('leave_conversation', {
+            other_user_id: otherUserId
+        });
+    });
+    }) ();
 </script>
 {% endblock %}
