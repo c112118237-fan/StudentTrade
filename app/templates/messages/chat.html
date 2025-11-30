@@ -69,13 +69,24 @@
                     {% for m in messages %}
                     <div class="flex {{ 'justify-end' if m.sender_id == current_user.id else 'justify-start' }}">
                         <div class="max-w-[70%] space-y-1">
-                            <div
-                                class="{{ 'bg-primary text-white rounded-2xl rounded-tr-none' if m.sender_id == current_user.id else 'bg-white border border-secondaryLight text-secondaryDark rounded-2xl rounded-tl-none' }} px-4 py-3 shadow-sm">
+                            <div class="{{ 'bg-primary text-white rounded-2xl rounded-tr-none' if m.sender_id == current_user.id else 'bg-white border border-secondaryLight text-secondaryDark rounded-2xl rounded-tl-none' }} px-4 py-3 shadow-sm"
+                                data-message-id="{{ m.id }}" data-sender-id="{{ m.sender_id }}"
+                                data-is-read="{{ 'true' if m.is_read else 'false' }}">
                                 {{ m.content }}
                             </div>
                             <div
                                 class="text-xs text-secondary {{ 'text-right' if m.sender_id == current_user.id else '' }}">
-                                {{ m.created_at.strftime('%H:%M') }}</div>
+                                {{ m.created_at.strftime('%H:%M') }}
+                                {% if m.sender_id == current_user.id %}
+                                <span class="read-status ml-1" data-message-id="{{ m.id }}">
+                                    {% if m.is_read %}
+                                    <span class="text-blue-400">✓✓ 已讀</span>
+                                    {% else %}
+                                    <span class="text-gray-400">✓ 已送出</span>
+                                    {% endif %}
+                                </span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
@@ -150,13 +161,23 @@
         const messageDiv = document.createElement('div');
         messageDiv.className = `flex ${isFromMe ? 'justify-end' : 'justify-start'}`;
 
+        const readStatusHtml = isFromMe ? `
+                <span class="read-status ml-1" data-message-id="${data.id}">
+                    <span class="text-gray-400">✓ 已送出</span>
+                </span>
+            ` : '';
+
         messageDiv.innerHTML = `
                 <div class="max-w-[70%] space-y-1">
-                    <div class="${isFromMe ? 'bg-primary text-white rounded-2xl rounded-tr-none' : 'bg-white border border-secondaryLight text-secondaryDark rounded-2xl rounded-tl-none'} px-4 py-3 shadow-sm">
+                    <div class="${isFromMe ? 'bg-primary text-white rounded-2xl rounded-tr-none' : 'bg-white border border-secondaryLight text-secondaryDark rounded-2xl rounded-tl-none'} px-4 py-3 shadow-sm"
+                         data-message-id="${data.id}"
+                         data-sender-id="${data.sender_id}"
+                         data-is-read="false">
                         ${escapeHtml(data.content)}
                     </div>
                     <div class="text-xs text-secondary ${isFromMe ? 'text-right' : ''}">
                         ${data.created_at}
+                        ${readStatusHtml}
                     </div>
                 </div>
             `;
@@ -186,6 +207,24 @@
                 badge.classList.add('hidden');
             }
         });
+    });
+
+    // Handle read receipt updates
+    socket.on('messages_marked_read', function (data) {
+        console.log('Messages marked as read:', data);
+
+        // Only update if the other user read our messages
+        if (data.reader_id !== currentUserId) {
+            // Update all sent messages to show as read
+            const readStatuses = document.querySelectorAll('.read-status');
+            readStatuses.forEach(status => {
+                const unreadSpan = status.querySelector('span.text-gray-400');
+                if (unreadSpan) {
+                    unreadSpan.className = 'text-blue-400';
+                    unreadSpan.textContent = '✓✓ 已讀';
+                }
+            });
+        }
     });
 
     // Handle form submission

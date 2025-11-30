@@ -136,6 +136,14 @@ def handle_mark_as_read(data):
     # 更新未讀計數
     unread_count = MessageService.get_unread_count(current_user.id)
     emit('update_unread_count', {'count': unread_count})
+    
+    # 通知發送者訊息已被讀取
+    user_ids = sorted([current_user.id, int(other_user_id)])
+    room = f"chat_{user_ids[0]}_{user_ids[1]}"
+    emit('messages_marked_read', {
+        'reader_id': current_user.id,
+        'other_user_id': int(other_user_id)
+    }, room=room)
 
 
 @socketio.on('join_user_room')
