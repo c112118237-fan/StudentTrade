@@ -82,12 +82,13 @@
                 </div>
 
                 <form class="px-6 py-4 border-t border-secondaryLight flex items-end gap-3 bg-white" method="post"
-                    action="{{ url_for('messages.send') }}">
+                    action="{{ url_for('messages.send') }}" id="message-form">
                     <input type="hidden" name="receiver_id" value="{{ other_user.id }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <textarea name="content" rows="1"
-                        class="flex-1 px-4 py-3 rounded-lg border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary resize-none"
-                        placeholder="輸入訊息..." required></textarea>
+                    <textarea name="content" id="message-input" rows="1"
+                        class="flex-1 px-4 py-3 rounded-lg border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary resize-none overflow-hidden"
+                        placeholder="輸入訊息... (Enter 發送, Shift+Enter 換行)" required
+                        style="min-height: 48px; max-height: 200px;"></textarea>
                     <button type="submit"
                         class="px-4 py-3 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover">發送</button>
                 </form>
@@ -100,11 +101,12 @@
     (function () {
         // Initialize Socket.IO
         const socket = io();
-        const otherUserId = {{ other_user.id | tojson }};
-        const currentUserId = {{ current_user.id | tojson }};
-        const messageContainer = document.getElementById('message-container');
-        const messageForm = document.querySelector('form[action*="send"]');
-        const messageInput = document.querySelector('textarea[name="content"]');
+        const otherUserId = {{ other_user.id | tojson
+    }};
+    const currentUserId = {{ current_user.id | tojson }};
+    const messageContainer = document.getElementById('message-container');
+    const messageForm = document.querySelector('form[action*="send"]');
+    const messageInput = document.querySelector('textarea[name="content"]');
 
     // Auto-scroll to bottom function
     function scrollToBottom() {
@@ -200,9 +202,24 @@
                 content: content
             });
 
-            // Clear input
+            // Clear input and reset height
             messageInput.value = '';
+            messageInput.style.height = 'auto';
             messageInput.focus();
+        });
+
+        // Handle Enter key (send) and Shift+Enter (new line)
+        messageInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                messageForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Auto-resize textarea
+        messageInput.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
         });
     }
 

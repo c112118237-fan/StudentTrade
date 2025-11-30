@@ -20,9 +20,12 @@
                     class="text-secondary text-sm font-medium relative" aria-label="聊聊">
                     聊聊
                     {% if unread_messages > 0 %}
-                    <span
+                    <span id="unread-badge-desktop"
                         class="absolute -top-1 -right-2 bg-danger text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
                         {{ unread_messages if unread_messages <= 9 else '9+' }} </span>
+                            {% else %}
+                            <span id="unread-badge-desktop"
+                                class="hidden absolute -top-1 -right-2 bg-danger text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1"></span>
                             {% endif %}
                 </a>
                 <div class="relative" x-data="{ open: false }">
@@ -97,9 +100,12 @@
                     class="px-3 py-2 bg-secondaryLight rounded-lg text-secondaryDark text-sm relative inline-block">
                     聊聊
                     {% if unread_messages > 0 %}
-                    <span
+                    <span id="unread-badge-mobile"
                         class="absolute -top-1 -right-1 bg-danger text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
                         {{ unread_messages if unread_messages <= 9 else '9+' }} </span>
+                            {% else %}
+                            <span id="unread-badge-mobile"
+                                class="hidden absolute -top-1 -right-1 bg-danger text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1"></span>
                             {% endif %}
                 </a>
             </div>
