@@ -17,6 +17,7 @@ class User(UserMixin, db.Model):
     avatar_url = db.Column(db.String(255))
     is_active = db.Column(db.Boolean, default=True)
     is_verified = db.Column(db.Boolean, default=False)
+    is_deleted = db.Column(db.Boolean, nullable=False, default=False)
     last_login = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

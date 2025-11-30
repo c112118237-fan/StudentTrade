@@ -13,44 +13,54 @@
                 <a href="/products/my" class="text-primary hover:text-primaryHover text-sm">返回我的商品 →</a>
             </div>
 
-            <form class="space-y-6">
+            <form class="space-y-6" method="POST" action="{{ url_for('products.edit', id=product.id) if product else url_for('products.create') }}" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="space-y-2">
                     <label class="text-sm font-medium text-secondaryDark">商品標題 *</label>
-                    <input required class="w-full px-4 py-3 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary" placeholder="例：MacBook Pro 2020 13吋">
+                    <input name="title" value="{{ (product.title if product else request.form.get('title',''))|default('', true) }}" required class="w-full px-4 py-3 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary" placeholder="例：MacBook Pro 2020 13吋">
                     <p class="text-secondary text-sm">5-200 字元，清楚描述商品名稱</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-2">
                         <label class="text-sm font-medium text-secondaryDark">商品分類 *</label>
-                        <select required class="w-full px-4 py-3 rounded-md border border-secondaryLight bg-white focus:ring-2 focus:ring-primary/60 focus:border-primary">
-                            <option>請選擇分類</option>
-                            <option>書籍</option>
-                            <option>文具</option>
-                            <option>電子產品</option>
-                            <option>生活用品</option>
-                            <option>運動</option>
-                            <option>其他</option>
+                        <select name="category_id" required class="w-full px-4 py-3 rounded-md border border-secondaryLight bg-white focus:ring-2 focus:ring-primary/60 focus:border-primary">
+                            <option value="">請選擇分類</option>
+                            {% if categories %}
+                                {% for category in categories %}
+                                <option value="{{ category.id }}"
+                                    {% if (product and product.category_id == category.id) or (request.form.get('category_id', 0)|int == category.id) %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                            {% endfor %}
+                        {% else %}
+                                {% for name in ['書籍', '文具', '電子產品', '生活用品', '運動'] %}
+                                    <option value="{{ loop.index }}">{{ name }}</option>
+                                {% endfor %}
+                            {% endif %}
                         </select>
                     </div>
                     <div class="space-y-2">
                         <label class="text-sm font-medium text-secondaryDark">商品價格 * (NT$)</label>
-                        <input type="number" min="1" step="1" required class="w-full px-4 py-3 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary" placeholder="25000">
+                        <input name="price" type="number" min="0" step="1" required class="w-full px-4 py-3 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary"
+                               value="{{ (product.price if product else request.form.get('price',''))|default('', true) }}" placeholder="25000">
                     </div>
                 </div>
 
                 <div class="space-y-2">
                     <label class="text-sm font-medium text-secondaryDark">商品描述 *</label>
-                    <textarea required rows="5" class="w-full px-4 py-3 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary" placeholder="詳細說明商品狀況、購買時間、使用情況等..."></textarea>
+                    <textarea name="description" required rows="5" class="w-full px-4 py-3 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary" placeholder="詳細說明商品狀況、購買時間、使用情況等...">{{ (product.description if product else request.form.get('description',''))|default('', true) }}</textarea>
                     <p class="text-secondary text-sm">至少 20 個字</p>
                 </div>
 
                 <div class="space-y-2">
                     <label class="text-sm font-medium text-secondaryDark">商品狀況 *</label>
+                    {% set current_condition = product.condition if product else request.args.get('condition') or request.form.get('condition') %}
                     <div class="flex flex-wrap gap-4 text-secondary">
-                        {% for option in ['全新', '近全新', '良好', '普通'] %}
+                        {% for option in ['全新', '良好', '普通'] %}
                             <label class="inline-flex items-center gap-2">
-                                <input type="radio" name="condition" value="{{ option }}" class="text-primary focus:ring-primary" {% if loop.first %}checked{% endif %}>
+                                <input type="radio" name="condition" value="{{ option }}" class="text-primary focus:ring-primary"
+                                       {% if (current_condition and current_condition == option) or (not current_condition and loop.first) %}checked{% endif %}>
                                 <span>{{ option }}</span>
                             </label>
                         {% endfor %}
@@ -58,14 +68,37 @@
                 </div>
 
                 <div class="space-y-2">
-                    <label class="text-sm font-medium text-secondaryDark">交換偏好（選填）</label>
-                    <input class="w-full px-4 py-3 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary" placeholder="可交換的物品說明...">
+                    <label class="text-sm font-medium text-secondaryDark">交易地點（選填）</label>
+                    <input name="location" class="w-full px-4 py-3 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary" placeholder="例：校門口、7-11 XX門市"
+                           value="{{ (product.location if product else request.form.get('location',''))|default('', true) }}">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-secondaryDark">交易方式 *</label>
+                    {% set current_methods = [] %}
+                    {% if product and product.transaction_method %}
+                        {% set current_methods = product.transaction_method.split(',') %}
+                    {% endif %}
+                    {% set form_methods = request.form.getlist('transaction_methods') %}
+                    {% if form_methods %}
+                        {% set current_methods = form_methods %}
+                    {% endif %}
+                    <div class="flex flex-wrap gap-4 text-secondary">
+                        {% for option in ['面交', '宅配', '郵寄'] %}
+                            <label class="inline-flex items-center gap-2">
+                                <input type="checkbox" name="transaction_methods" value="{{ option }}" class="text-primary focus:ring-primary"
+                                       {% if option in current_methods %}checked{% endif %}>
+                                <span>{{ option }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                    <p class="text-secondary text-sm">至少勾選一種方式</p>
                 </div>
 
                 <div class="space-y-3">
                     <label class="text-sm font-medium text-secondaryDark">商品圖片 * (最多 5 張)</label>
                     <div class="border-2 border-dashed border-secondary rounded-xl bg-secondaryLight/40 p-8 text-center hover:border-primary hover:bg-primaryLight transition">
-                        <input data-image-input type="file" accept="image/png,image/jpeg" multiple class="hidden" id="images">
+                        <input data-image-input name="images" type="file" accept="image/png,image/jpeg" multiple class="hidden" id="images">
                         <label for="images" class="cursor-pointer flex flex-col items-center gap-3 text-secondaryDark">
                             <span class="text-3xl text-secondary">[+]</span>
                             <div>

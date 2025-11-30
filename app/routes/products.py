@@ -2,9 +2,25 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import current_user
 from app.services.product_service import ProductService
 from app.models.category import Category
+from app.extensions import db
 from app.utils.decorators import login_required
 
 bp = Blueprint('products', __name__)
+
+DEFAULT_CATEGORY_NAMES = ['書籍', '文具', '電子產品', '生活用品', '運動', '其他']
+
+
+def get_or_seed_categories():
+    """取得分類列表，如為空則建立預設分類"""
+    categories = Category.query.order_by(Category.sort_order, Category.id).all()
+    if categories:
+        return categories
+
+    # 建立預設分類
+    for idx, name in enumerate(DEFAULT_CATEGORY_NAMES):
+        db.session.add(Category(name=name, sort_order=idx))
+    db.session.commit()
+    return Category.query.order_by(Category.sort_order, Category.id).all()
 
 @bp.route('/')
 @bp.route('/products')
@@ -80,20 +96,31 @@ def create():
         category_id = request.form.get('category_id', type=int)
         condition = request.form.get('condition', '')
         location = request.form.get('location', '').strip()
-        transaction_method = request.form.get('transaction_method', '').strip()
+        transaction_methods = request.form.getlist('transaction_methods')
+        transaction_method = ', '.join(m for m in transaction_methods if m)
 
-        # 取得上傳的圖片
-        images = []
-        for i in range(5):
-            image_file = request.files.get(f'image_{i}')
-            if image_file and image_file.filename:
-                images.append(image_file)
+        # 取得上傳的圖片（支援多檔 input name="images"）
+        images = [
+            f for f in request.files.getlist('images')
+            if f and f.filename
+        ]
+        if not images:
+            # 向後相容舊欄位 image_0 ~ image_4
+            for i in range(5):
+                image_file = request.files.get(f'image_{i}')
+                if image_file and image_file.filename:
+                    images.append(image_file)
 
         # 驗證必填欄位
         if not all([title, category_id, condition]):
             flash('請填寫所有必填欄位', 'error')
-            categories = Category.query.all()
-            return render_template('products/form.html', categories=categories)
+            categories = get_or_seed_categories()
+            return render_template('products/form.html', categories=categories, product=None)
+
+        if not transaction_method:
+            flash('請至少選擇一種交易方式', 'error')
+            categories = get_or_seed_categories()
+            return render_template('products/form.html', categories=categories, product=None)
 
         # 建立商品
         success, result = ProductService.create_product(
@@ -115,7 +142,7 @@ def create():
             flash(result, 'error')
 
     # GET 請求：顯示表單
-    categories = Category.query.all()
+    categories = get_or_seed_categories()
     return render_template('products/form.html', categories=categories, product=None)
 
 @bp.route('/products/<int:id>/edit', methods=['GET', 'POST'])
@@ -128,7 +155,7 @@ def edit(id):
         abort(404)
 
     # 驗證擁有權
-    if product.seller_id != current_user.id:
+    if product.user_id != current_user.id:
         abort(403)
 
     if request.method == 'POST':
@@ -138,11 +165,17 @@ def edit(id):
         category_id = request.form.get('category_id', type=int)
         condition = request.form.get('condition', '')
         location = request.form.get('location', '').strip()
-        transaction_method = request.form.get('transaction_method', '').strip()
+        transaction_methods = request.form.getlist('transaction_methods')
+        transaction_method = ', '.join(m for m in transaction_methods if m)
 
         # 驗證必填欄位
         if not all([title, category_id, condition]):
             flash('請填寫所有必填欄位', 'error')
+            categories = Category.query.all()
+            return render_template('products/form.html', categories=categories, product=product)
+
+        if not transaction_method:
+            flash('請至少選擇一種交易方式', 'error')
             categories = Category.query.all()
             return render_template('products/form.html', categories=categories, product=product)
 
@@ -166,7 +199,7 @@ def edit(id):
             flash(result, 'error')
 
     # GET 請求：顯示表單
-    categories = Category.query.all()
+    categories = get_or_seed_categories()
     return render_template('products/form.html', categories=categories, product=product)
 
 @bp.route('/products/<int:id>/delete', methods=['POST'])

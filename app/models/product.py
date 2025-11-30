@@ -13,6 +13,8 @@ class Product(db.Model):
     condition = db.Column(db.String(20), nullable=False)
     status = db.Column(db.String(20), default='active')
     exchange_preference = db.Column(db.String(200))
+    location = db.Column(db.String(200))
+    transaction_method = db.Column(db.String(200))
     view_count = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

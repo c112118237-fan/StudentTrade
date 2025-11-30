@@ -119,9 +119,9 @@ class ProductService:
 
             # 建立商品
             product = Product(
-                seller_id=seller_id,
+                user_id=seller_id,
                 title=title.strip(),
-                description=description.strip() if description else None,
+                description=description.strip() if description else '',
                 price=price,
                 category_id=category_id,
                 condition=condition,
@@ -178,7 +178,7 @@ class ProductService:
                 return False, '商品不存在'
 
             # 驗證擁有權
-            if product.seller_id != seller_id:
+            if product.user_id != seller_id:
                 return False, '您沒有權限編輯此商品'
 
             # 檢查商品狀態（已售出不可編輯）
@@ -231,7 +231,7 @@ class ProductService:
                 return False, '商品不存在'
 
             # 驗證擁有權
-            if product.seller_id != seller_id:
+            if product.user_id != seller_id:
                 return False, '您沒有權限刪除此商品'
 
             # 檢查是否有進行中的交易
@@ -271,7 +271,7 @@ class ProductService:
                 return False, '商品不存在'
 
             # 驗證擁有權
-            if product.seller_id != seller_id:
+            if product.user_id != seller_id:
                 return False, '您沒有權限編輯此商品'
 
             # 檢查圖片數量（最多 5 張）
@@ -321,7 +321,7 @@ class ProductService:
                 return False, '圖片不存在'
 
             # 驗證擁有權
-            if product_image.product.seller_id != seller_id:
+            if product_image.product.user_id != seller_id:
                 return False, '您沒有權限刪除此圖片'
 
             # 刪除檔案
