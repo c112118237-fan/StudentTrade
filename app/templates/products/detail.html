@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}商品詳情 - StudentTrade{% endblock %}
+
+{% block content %}
+{% set product = product|default({
+    'title': 'MacBook Pro 2020 13吋',
+    'price': '25,000',
+    'condition': '良好',
+    'category': '電子產品',
+    'published_at': '2024-11-28 14:30',
+    'views': 42,
+    'status': '商品刊登中'
+}, true) %}
+{% set thumbnails = product.images|default([1,2,3,4,5], true) %}
+{% set similar = similar|default([
+    {'title': 'MacBook Pro 2019', 'price': '20,000', 'condition': '良好', 'time_ago': '2天前', 'url': '/products/5'},
+    {'title': 'iPad Air', 'price': '15,000', 'condition': '近全新', 'time_ago': '3天前', 'url': '/products/6'},
+    {'title': 'Surface Go', 'price': '12,000', 'condition': '全新', 'time_ago': '4天前', 'url': '/products/7'},
+    {'title': 'MacBook Pro 2021', 'price': '30,000', 'condition': '近全新', 'time_ago': '1天前', 'url': '/products/8'}
+], true) %}
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <div class="text-sm text-secondary flex items-center gap-2">
+        <a class="hover:text-primary" href="/">首頁</a> › <a class="hover:text-primary" href="/products?category={{ product.category }}">{{ product.category }}</a> › <span class="text-secondaryDark">{{ product.title }}</span>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 bg-white rounded-xl shadow-card p-6">
+        <div class="space-y-4">
+            <div class="relative aspect-square bg-secondaryLight rounded-xl overflow-hidden flex items-center justify-center">
+                <div class="absolute bottom-3 right-3 px-3 py-1 rounded bg-success text-white text-xs font-semibold">可放大</div>
+            </div>
+            <div class="grid grid-cols-5 gap-3">
+                {% for _ in thumbnails[:5] %}
+                    <button class="aspect-square rounded-lg border border-secondaryLight bg-secondaryLight hover:border-primary"></button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <div class="flex items-center gap-3">
+                <h1 class="text-2xl font-semibold text-secondaryDark">{{ product.title }}</h1>
+                <span class="px-3 py-1 rounded text-white text-sm font-semibold {% if product.status == '交易中' %}bg-warning{% elif product.status == '已售出' %}bg-secondary{% else %}bg-success{% endif %}">
+                    {{ product.status }}
+                </span>
+            </div>
+            <p class="text-3xl font-bold text-primary">NT$ {{ product.price }}</p>
+            <div class="grid grid-cols-2 gap-3 text-sm text-secondary">
+                <div>商品狀況：<span class="font-medium text-secondaryDark">● {{ product.condition }}</span></div>
+                <div>商品分類：<span class="font-medium text-secondaryDark">{{ product.category }}</span></div>
+                <div>上架時間：<span class="font-medium text-secondaryDark">{{ product.published_at }}</span></div>
+                <div>瀏覽次數：<span class="font-medium text-secondaryDark">{{ product.views }} 次</span></div>
+            </div>
+            <div class="space-y-2">
+                <h2 class="font-semibold text-secondaryDark">商品描述</h2>
+                <p class="text-secondary leading-relaxed">2020 年購買，使用狀況良好，無明顯刮痕，電池健康度 85%，附原廠充電器與包裝盒。</p>
+            </div>
+            <div class="space-y-2">
+                <h2 class="font-semibold text-secondaryDark">交換偏好</h2>
+                <p class="text-secondary leading-relaxed">可交換 iPad 或同等價值商品。</p>
+            </div>
+            <div class="flex flex-wrap gap-3 pt-2">
+                <button class="flex items-center gap-2 px-5 py-3 rounded-lg border border-primary text-primary hover:bg-primaryLight">聯繫賣家</button>
+                <button class="flex items-center gap-2 px-5 py-3 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover">發起交易</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-card p-6">
+        <h2 class="text-lg font-semibold text-secondaryDark mb-4">賣家資訊</h2>
+        <div class="flex items-center gap-4">
+            <div class="w-16 h-16 rounded-full bg-primaryLight flex items-center justify-center text-xl">用戶</div>
+            <div class="flex-1">
+                <p class="font-semibold text-secondaryDark">王小明</p>
+                <p class="text-sm text-secondary">評分 4.8 (12 則評價)</p>
+                <p class="text-sm text-secondary">會員自：2024-01-15</p>
+                <div class="flex gap-3 mt-2 text-sm">
+                    <a class="text-primary hover:text-primaryHover" href="#">查看所有商品</a>
+                    <a class="text-primary hover:text-primaryHover" href="#">查看評價</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-secondaryDark">相似商品推薦</h2>
+            <a class="text-primary text-sm hover:text-primaryHover" href="/products?category={{ product.category }}">查看更多</a>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {% for product in similar %}
+                {% include 'components/product_card.html' with context %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

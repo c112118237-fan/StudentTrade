@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}商品刊登 - StudentTrade{% endblock %}
+
+{% block content %}
+<section class="py-10">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white rounded-xl shadow-card p-8 space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-semibold text-secondaryDark">刊登新商品</h1>
+                    <p class="text-secondary text-sm">填寫完整資訊，讓買家更容易找到</p>
+                </div>
+                <a href="/products/my" class="text-primary hover:text-primaryHover text-sm">返回我的商品 →</a>
+            </div>
+
+            <form class="space-y-6">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-secondaryDark">商品標題 *</label>
+                    <input required class="w-full px-4 py-3 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary" placeholder="例：MacBook Pro 2020 13吋">
+                    <p class="text-secondary text-sm">5-200 字元，清楚描述商品名稱</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-secondaryDark">商品分類 *</label>
+                        <select required class="w-full px-4 py-3 rounded-md border border-secondaryLight bg-white focus:ring-2 focus:ring-primary/60 focus:border-primary">
+                            <option>請選擇分類</option>
+                            <option>書籍</option>
+                            <option>文具</option>
+                            <option>電子產品</option>
+                            <option>生活用品</option>
+                            <option>運動</option>
+                            <option>其他</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-secondaryDark">商品價格 * (NT$)</label>
+                        <input type="number" min="1" step="1" required class="w-full px-4 py-3 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary" placeholder="25000">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-secondaryDark">商品描述 *</label>
+                    <textarea required rows="5" class="w-full px-4 py-3 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary" placeholder="詳細說明商品狀況、購買時間、使用情況等..."></textarea>
+                    <p class="text-secondary text-sm">至少 20 個字</p>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-secondaryDark">商品狀況 *</label>
+                    <div class="flex flex-wrap gap-4 text-secondary">
+                        {% for option in ['全新', '近全新', '良好', '普通'] %}
+                            <label class="inline-flex items-center gap-2">
+                                <input type="radio" name="condition" value="{{ option }}" class="text-primary focus:ring-primary" {% if loop.first %}checked{% endif %}>
+                                <span>{{ option }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-secondaryDark">交換偏好（選填）</label>
+                    <input class="w-full px-4 py-3 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary" placeholder="可交換的物品說明...">
+                </div>
+
+                <div class="space-y-3">
+                    <label class="text-sm font-medium text-secondaryDark">商品圖片 * (最多 5 張)</label>
+                    <div class="border-2 border-dashed border-secondary rounded-xl bg-secondaryLight/40 p-8 text-center hover:border-primary hover:bg-primaryLight transition">
+                        <input data-image-input type="file" accept="image/png,image/jpeg" multiple class="hidden" id="images">
+                        <label for="images" class="cursor-pointer flex flex-col items-center gap-3 text-secondaryDark">
+                            <span class="text-3xl text-secondary">[+]</span>
+                            <div>
+                                <p class="text-base font-medium">點擊或拖曳上傳圖片</p>
+                                <p class="text-sm text-secondary">支援 JPG / PNG，最大 5MB，最多 5 張</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="flex flex-wrap gap-3" data-image-preview>
+                        <div class="w-28 h-28 rounded-xl bg-secondaryLight flex items-center justify-center text-secondary text-sm">預覽</div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <a href="/products" class="px-4 py-2 rounded-lg border border-secondaryLight text-secondary hover:bg-secondaryLight">取消</a>
+                    <button type="submit" class="px-6 py-2.5 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover">送出</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

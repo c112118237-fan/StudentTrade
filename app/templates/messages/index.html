@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}訊息列表 - StudentTrade{% endblock %}
+
+{% block content %}
+{% set threads = threads|default([
+    {'user': '張三', 'snippet': '關於 MacBook...', 'time': '5 分鐘前', 'unread': 2, 'active': True},
+    {'user': '李四', 'snippet': '可以面交嗎？', 'time': '1 小時前', 'unread': 0, 'active': False},
+    {'user': '王五', 'snippet': '好的謝謝', 'time': '昨天', 'unread': 0, 'active': False}
+], true) %}
+
+<section class="py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white rounded-xl shadow-card overflow-hidden grid grid-cols-1 md:grid-cols-3">
+            <aside class="border-r border-secondaryLight max-h-[70vh] overflow-y-auto chat-scroll">
+                <div class="p-4 font-semibold text-secondaryDark">對話列表</div>
+                <div class="space-y-2 p-4 pt-0">
+                    {% for thread in threads %}
+                        <a href="/messages/{{ loop.index }}" class="block rounded-lg p-3 {{ 'bg-primaryLight' if thread.unread else 'bg-white' }} {{ 'border border-primary' if thread.active else 'border border-secondaryLight' }}">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full {{ 'bg-primary' if thread.unread else 'bg-secondaryLight' }}"></span>
+                                    <span class="font-medium text-secondaryDark">{{ thread.user }} {% if thread.unread %}({{ thread.unread }}){% endif %}</span>
+                                </div>
+                                <span class="text-xs text-secondary">{{ thread.time }}</span>
+                            </div>
+                            <p class="text-secondary text-sm mt-1 line-clamp-1">{{ thread.snippet }}</p>
+                        </a>
+                    {% endfor %}
+                </div>
+            </aside>
+            <div class="md:col-span-2 p-6 flex items-center justify-center text-secondary">
+                <div class="text-center space-y-2">
+                    <p class="text-secondaryDark font-semibold">選擇一個對話開始聊天</p>
+                    <p class="text-secondary text-sm">點擊左側對話查看訊息</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

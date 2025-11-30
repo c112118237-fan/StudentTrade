@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}商品列表 - StudentTrade{% endblock %}
+
+{% block content %}
+{% set categories = [
+    {'name': '書籍'},
+    {'name': '文具'},
+    {'name': '電子產品'},
+    {'name': '生活用品'},
+    {'name': '運動'},
+    {'name': '其他'}
+] %}
+{% set product_list = products|default([
+    {'title': 'MacBook Pro 2020 13吋', 'price': '25,000', 'condition': '良好', 'time_ago': '1天前', 'url': '/products/1', 'status': '刊登中'},
+    {'title': 'Python 程式設計（二手書）', 'price': '300', 'condition': '近全新', 'time_ago': '2天前', 'url': '/products/2'},
+    {'title': '計算機', 'price': '500', 'condition': '普通', 'time_ago': '3天前', 'url': '/products/3'},
+    {'title': '筆記本組合', 'price': '50', 'condition': '全新', 'time_ago': '5天前', 'url': '/products/4'}
+], true) %}
+
+<section class="bg-white/70 border-b border-secondaryLight">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
+        <div class="space-y-3">
+            <h1 class="text-2xl font-semibold text-secondaryDark">搜尋商品</h1>
+            <p class="text-secondary text-sm">輸入關鍵字或分類，快速找到你想要的物品</p>
+            <div class="w-full md:w-3/4 lg:w-1/2 relative">
+                <input
+                    data-search-input
+                    type="search"
+                    placeholder="搜尋商品、分類、品牌..."
+                    class="w-full px-4 py-3 rounded-lg border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary"
+                >
+                <div data-search-suggestions class="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-card p-2 hidden"></div>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-2 items-center">
+            <span class="text-secondary text-sm">分類快速導航</span>
+            {% for cat in categories %}
+                <a href="/products?category={{ cat.name }}"
+                   class="px-3 py-2 rounded-full border border-secondaryLight text-secondary hover:border-primary hover:text-primary">
+                    {{ cat.name }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <aside class="bg-white rounded-xl shadow-card p-5 space-y-6">
+                <div>
+                    <p class="font-semibold text-secondaryDark mb-3">分類</p>
+                    <div class="space-y-2 text-secondary">
+                        {% for cat in categories %}
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" class="rounded border-secondaryLight text-primary focus:ring-primary">
+                                <span>{{ cat.name }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <p class="font-semibold text-secondaryDark">價格範圍</p>
+                    <div class="flex items-center gap-3 text-sm">
+                        <input type="number" placeholder="100" class="w-1/2 px-3 py-2 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary">
+                        <span>—</span>
+                        <input type="number" placeholder="50000" class="w-1/2 px-3 py-2 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary">
+                    </div>
+                </div>
+                <div>
+                    <p class="font-semibold text-secondaryDark mb-3">商品狀況</p>
+                    <div class="space-y-2 text-secondary">
+                        {% for label in ['全新', '近全新', '良好', '普通'] %}
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" class="rounded border-secondaryLight text-primary focus:ring-primary" {% if loop.index < 3 %}checked{% endif %}>
+                                <span>{{ label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <button class="w-full bg-primary text-white rounded-lg py-2.5 shadow-md hover:bg-primaryHover">套用篩選</button>
+            </aside>
+
+            <div class="lg:col-span-3 space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h1 class="text-xl font-semibold text-secondaryDark">商品列表</h1>
+                        <p class="text-secondary text-sm">找到 {{ product_list|length }} 項商品</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <label class="text-sm text-secondary">排序</label>
+                        <select class="px-3 py-2 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary">
+                            <option>最新優先</option>
+                            <option>價格：低到高</option>
+                            <option>價格：高到低</option>
+                            <option>熱門程度</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    {% for product in product_list %}
+                        {% include 'components/product_card.html' with context %}
+                    {% endfor %}
+                </div>
+
+                <div class="flex justify-center items-center gap-2 pt-4">
+                    <button class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">1</button>
+                    <button class="px-3 py-2 rounded bg-primary text-white shadow">2</button>
+                    <button class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">3</button>
+                    <span class="text-secondary">... 10</span>
+                    <button class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">→</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

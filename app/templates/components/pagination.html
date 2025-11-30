@@ -1,0 +1,27 @@
+<div class="flex justify-center items-center gap-2 mt-8">
+    {% if pagination.has_prev %}
+        <a href="?page={{ pagination.prev_num }}"
+           class="px-3 py-2 rounded-lg border border-secondaryLight text-secondary hover:bg-primaryLight">
+            ← 上一頁
+        </a>
+    {% endif %}
+
+    {% for page in pagination.iter_pages() %}
+        {% if page %}
+            {% if page == pagination.page %}
+                <span class="px-3 py-2 rounded-lg bg-primary text-white shadow-sm">{{ page }}</span>
+            {% else %}
+                <a href="?page={{ page }}" class="px-3 py-2 rounded-lg border border-secondaryLight hover:bg-primaryLight">
+                    {{ page }}
+                </a>
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+        <a href="?page={{ pagination.next_num }}"
+           class="px-3 py-2 rounded-lg border border-secondaryLight text-secondary hover:bg-primaryLight">
+            下一頁 →
+        </a>
+    {% endif %}
+</div>

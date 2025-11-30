@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}交易詳情 - StudentTrade{% endblock %}
+
+{% block content %}
+{% set tx = transaction|default({
+    'id': 123,
+    'status': '等待賣家回應',
+    'status_class': 'warning',
+    'type': '購買',
+    'amount': '25,000',
+    'created_at': '2024-11-29 10:30',
+    'product': {'title': 'MacBook Pro 2020 13吋', 'category': '電子產品', 'condition': '良好', 'url': '/products/1'},
+    'seller': {'name': '王小明', 'rating': '4.8'},
+    'note': '可以面交嗎？地點在台北？'
+}, true) %}
+
+<section class="py-10">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div class="text-sm text-secondary flex items-center gap-2">
+            <a class="hover:text-primary" href="/transactions">我的交易</a> › <span class="text-secondaryDark">交易 #{{ tx.id }}</span>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-card p-6 space-y-6">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="text-lg font-semibold text-secondaryDark">交易狀態：{{ tx.status }}</div>
+                {% set badge_color = 'bg-yellow-100 text-warning border border-warning/60' %}
+                {% if tx.status_class == 'success' %}{% set badge_color = 'bg-green-100 text-success border border-success/60' %}{% endif %}
+                {% if tx.status_class == 'danger' %}{% set badge_color = 'bg-red-100 text-danger border border-danger/60' %}{% endif %}
+                <span class="px-3 py-1 rounded {{ badge_color }} text-sm font-semibold">{{ tx.status }}</span>
+            </div>
+
+            <div class="border-t border-secondaryLight pt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-secondary">
+                <div>交易編號：<span class="font-medium text-secondaryDark">#{{ tx.id }}</span></div>
+                <div>發起時間：<span class="font-medium text-secondaryDark">{{ tx.created_at }}</span></div>
+                <div>交易類型：<span class="font-medium text-secondaryDark">{{ tx.type }}</span></div>
+                <div>交易金額：<span class="font-medium text-secondaryDark">NT$ {{ tx.amount }}</span></div>
+            </div>
+
+            <div class="border-t border-secondaryLight pt-4">
+                <h2 class="font-semibold text-secondaryDark mb-3">商品資訊</h2>
+                <div class="flex gap-4 items-center">
+                    <div class="w-16 h-16 bg-secondaryLight rounded-lg flex-shrink-0"></div>
+                    <div class="space-y-1">
+                        <p class="text-secondaryDark font-medium">{{ tx.product.title }}</p>
+                        <p class="text-secondary text-sm">分類：{{ tx.product.category }} | 狀況：{{ tx.product.condition }}</p>
+                        <a class="text-primary text-sm hover:text-primaryHover" href="{{ tx.product.url }}">查看商品詳情</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-secondaryLight pt-4">
+                <h2 class="font-semibold text-secondaryDark mb-3">賣家資訊</h2>
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-primaryLight flex items-center justify-center text-lg">用戶</div>
+                    <div>
+                        <p class="font-medium text-secondaryDark">{{ tx.seller.name }}</p>
+                        <p class="text-secondary text-sm">評分：{{ tx.seller.rating }}</p>
+                        <a class="text-primary text-sm hover:text-primaryHover" href="/messages/{{ tx.seller.name }}">發送訊息</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-secondaryLight pt-4 space-y-2">
+                <h2 class="font-semibold text-secondaryDark">備註</h2>
+                <p class="text-secondary">{{ tx.note }}</p>
+            </div>
+
+            <div class="border-t border-secondaryLight pt-4 flex flex-wrap gap-3">
+                <button class="px-4 py-2 rounded-lg border border-danger text-danger hover:bg-red-50">取消交易</button>
+                <button class="px-4 py-2 rounded-lg bg-success text-white shadow-md hover:bg-emerald-600">接受交易</button>
+                <button class="px-4 py-2 rounded-lg border border-warning text-warning hover:bg-yellow-50">拒絕交易</button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-card p-6 space-y-3">
+            <h2 class="font-semibold text-secondaryDark">完成後</h2>
+            <div class="flex flex-wrap gap-3">
+                <a class="px-4 py-2 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover" href="/reviews/new/{{ tx.id }}">對賣家進行評價</a>
+                <button class="px-4 py-2 rounded-lg border border-secondaryLight text-secondary hover:bg-secondaryLight">下載收據</button>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

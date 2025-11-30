@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}我的交易 - StudentTrade{% endblock %}
+
+{% block content %}
+{% set transactions = transactions|default([
+    {'id': 123, 'title': 'MacBook Pro 2020', 'amount': '25,000', 'role': 'buyer', 'status': '待回應', 'status_class': 'warning', 'time': '2024-11-29 10:30', 'note': '可以面交嗎？'},
+    {'id': 122, 'title': 'Python 程式設計', 'amount': '300', 'role': 'buyer', 'status': '已完成', 'status_class': 'success', 'time': '2024-11-28 15:20'}
+], true) %}
+
+<section class="py-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-semibold text-secondaryDark">我的交易</h1>
+                <p class="text-secondary text-sm">查看你作為買家或賣家的所有交易</p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap gap-3 text-sm">
+            <button class="px-4 py-2 rounded-lg bg-primary text-white shadow-md">我是買家 (5)</button>
+            <button class="px-4 py-2 rounded-lg border border-secondaryLight text-secondary hover:bg-primaryLight">我是賣家 (3)</button>
+        </div>
+
+        <div class="flex flex-wrap gap-3 text-sm items-center">
+            <label class="text-secondary">篩選:</label>
+            <select class="px-3 py-2 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary">
+                <option>全部狀態</option>
+                <option>待回應</option>
+                <option>已接受</option>
+                <option>已完成</option>
+                <option>已取消</option>
+            </select>
+            <select class="px-3 py-2 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary">
+                <option>最新優先</option>
+                <option>金額：高到低</option>
+                <option>金額：低到高</option>
+            </select>
+        </div>
+
+        <div class="space-y-4">
+            {% for tx in transactions %}
+                <div class="bg-white rounded-xl shadow-card p-5 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div class="text-secondaryDark font-semibold">交易 #{{ tx.id }}</div>
+                        {% set badge_color = 'bg-yellow-100 text-warning border border-warning/60' %}
+                        {% if tx.status_class == 'success' %}{% set badge_color = 'bg-green-100 text-success border border-success/60' %}{% endif %}
+                        {% if tx.status_class == 'info' %}{% set badge_color = 'bg-blue-100 text-primary border border-primary/60' %}{% endif %}
+                        {% if tx.status_class == 'danger' %}{% set badge_color = 'bg-red-100 text-danger border border-danger/60' %}{% endif %}
+                        <span class="px-3 py-1 rounded {{ badge_color }} text-sm font-semibold">{{ tx.status }}</span>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="w-16 h-16 rounded-lg bg-secondaryLight flex-shrink-0"></div>
+                        <div class="flex-1 space-y-1 text-sm">
+                            <p class="text-secondaryDark font-medium">{{ tx.title }}</p>
+                            <p class="text-secondary">交易金額：NT$ {{ tx.amount }}</p>
+                            <p class="text-secondary">角色：{{ '買家' if tx.role == 'buyer' else '賣家' }}</p>
+                            <p class="text-secondary">時間：{{ tx.time }}</p>
+                            {% if tx.note %}<p class="text-secondary">備註：{{ tx.note }}</p>{% endif %}
+                        </div>
+                        <div class="flex flex-col gap-2 min-w-[120px]">
+                            <a class="px-3 py-2 rounded-lg border border-primary text-primary text-center hover:bg-primaryLight" href="/transactions/{{ tx.id }}">查看詳情</a>
+                            {% if tx.status == '已完成' %}
+                                <a class="px-3 py-2 rounded-lg bg-primary text-white text-center hover:bg-primaryHover" href="/reviews/new/{{ tx.id }}">評價</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="flex justify-center gap-2 pt-2">
+            <button class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">1</button>
+            <button class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">2</button>
+            <button class="px-3 py-2 rounded bg-primary text-white shadow">3</button>
+            <button class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">→</button>
+        </div>
+    </div>
+</section>
+{% endblock %}

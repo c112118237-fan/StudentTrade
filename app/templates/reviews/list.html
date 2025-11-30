@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}評價列表 - StudentTrade{% endblock %}
+
+{% block content %}
+{% set reviews = reviews|default([
+    {'score': 5, 'user': '李小華', 'date': '2024-11-28', 'product': 'MacBook Pro 2020', 'text': '交易順利，賣家很好！東西狀況如描述，推薦！'},
+    {'score': 4, 'user': '張大明', 'date': '2024-11-25', 'product': 'Python 程式設計', 'text': '不錯，書況良好。'}
+], true) %}
+
+<section class="py-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div class="bg-white rounded-xl shadow-card p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-16 h-16 rounded-full bg-primaryLight flex items-center justify-center text-xl">用戶</div>
+                <div>
+                    <p class="text-lg font-semibold text-secondaryDark">王小明的評價</p>
+                    <p class="text-secondary">評分 4.8 / 5.0 (12 則評價)</p>
+                </div>
+            </div>
+            <a class="px-4 py-2 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover" href="/products/1">查看賣家商品</a>
+        </div>
+
+        <div class="space-y-4">
+            {% for review in reviews %}
+                <div class="bg-white rounded-xl shadow-card p-5 space-y-2">
+                    <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-secondaryDark">{{ review.score }} / 5</span>
+                    </div>
+                        <span class="text-sm text-secondary">{{ review.date }}</span>
+                    </div>
+                    <p class="text-secondaryDark font-medium">{{ review.user }}</p>
+                    <p class="text-sm text-secondary">交易：{{ review.product }}</p>
+                    <p class="text-secondary leading-relaxed">{{ review.text }}</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="flex justify-center gap-2 pt-2">
+            <button class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">1</button>
+            <button class="px-3 py-2 rounded bg-primary text-white shadow">2</button>
+            <button class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">3</button>
+        </div>
+    </div>
+</section>
+{% endblock %}

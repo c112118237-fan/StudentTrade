@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}404 - 找不到頁面{% endblock %}
+
+{% block content %}
+<section class="py-16">
+    <div class="max-w-3xl mx-auto px-4 text-center space-y-4">
+        <div class="text-6xl font-bold text-primary">404</div>
+        <h1 class="text-2xl font-semibold text-secondaryDark">找不到頁面</h1>
+        <p class="text-secondary">抱歉，您訪問的頁面不存在</p>
+        <div class="flex justify-center gap-3">
+            <a href="/" class="px-4 py-2 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover">返回首頁</a>
+            <a href="/products" class="px-4 py-2 rounded-lg border border-primary text-primary hover:bg-primaryLight">查看商品</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

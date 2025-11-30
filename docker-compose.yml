@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: studenttrade_web
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://studenttrade:studenttrade123@db:5432/studenttrade
+      - FLASK_ENV=development
+    depends_on:
+      - db
+    volumes:
+      - ./app:/app/app
+      - ./app/static/uploads:/app/app/static/uploads
+    restart: unless-stopped
+
+  db:
+    image: postgres:16
+    container_name: studenttrade_db
+    environment:
+      - POSTGRES_DB=studenttrade
+      - POSTGRES_USER=studenttrade
+      - POSTGRES_PASSWORD=studenttrade123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
