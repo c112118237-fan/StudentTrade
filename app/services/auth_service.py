@@ -229,40 +229,23 @@ class AuthService:
         """
         from app.models.product import Product
         from app.models.transaction import Transaction
-        from app.models.review import Review
-
-        # 商品數量
+        
+        # 上架商品數
         active_products = Product.query.filter_by(
-            seller_id=user.id,
-            status='active'
+            user_id=user.id,
+            status='available'
         ).count()
-
-        sold_products = Product.query.filter_by(
-            seller_id=user.id,
-            status='sold'
+        
+        # 完成交易數（作為買家或賣家）
+        completed_transactions = Transaction.query.filter(
+            db.or_(
+                Transaction.buyer_id == user.id,
+                Transaction.seller_id == user.id
+            ),
+            Transaction.status == 'completed'
         ).count()
-
-        # 交易數量
-        purchases = Transaction.query.filter_by(
-            buyer_id=user.id,
-            status='completed'
-        ).count()
-
-        sales = Transaction.query.filter_by(
-            seller_id=user.id,
-            status='completed'
-        ).count()
-
-        # 評價統計
-        reviews = Review.query.filter_by(reviewee_id=user.id).all()
-        avg_rating = sum(r.rating for r in reviews) / len(reviews) if reviews else 0
-        review_count = len(reviews)
-
+        
         return {
             'active_products': active_products,
-            'sold_products': sold_products,
-            'total_purchases': purchases,
-            'total_sales': sales,
-            'avg_rating': round(avg_rating, 1),
-            'review_count': review_count
+            'completed_transactions': completed_transactions
         }
