@@ -104,7 +104,11 @@
     </div>
 
     <div class="bg-white rounded-xl shadow-card p-6">
-        <h2 class="text-lg font-semibold text-secondaryDark mb-4">賣家資訊</h2>
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-secondaryDark">賣家資訊</h2>
+            <a class="text-primary text-sm hover:text-primaryHover"
+                href="{{ url_for('products.seller', user_id=main_product.seller.id) }}">查看所有商品</a>
+        </div>
         <div class="flex items-center gap-4">
             <div
                 class="w-16 h-16 rounded-full bg-primaryLight flex items-center justify-center text-xl font-semibold text-primary">
@@ -117,10 +121,6 @@
                 {% if main_product.seller.department %}
                 <p class="text-sm text-secondary">{{ main_product.seller.department }}</p>
                 {% endif %}
-                <div class="flex gap-3 mt-2 text-sm">
-                    <a class="text-primary hover:text-primaryHover"
-                        href="/products?user={{ main_product.seller.id }}">查看所有商品</a>
-                </div>
             </div>
         </div>
     </div>
