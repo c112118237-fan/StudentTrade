@@ -1,34 +1,60 @@
 {% set p = product %}
-{% set placeholder_image = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23DBEAFE'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='28' fill='%231D4ED8' font-family='Arial'%3EStudentTrade%3C/text%3E%3C/svg%3E" %}
-<a href="{{ url_for('products.detail', id=p.id) }}" class="block bg-white rounded-xl shadow-card hover:shadow-cardHover transition-all floating">
-    <div class="relative aspect-square bg-secondaryLight overflow-hidden rounded-t-xl">
-        <img src="{{ p.primary_image }}"
-             alt="{{ p.title }}"
-             class="w-full h-full object-cover">
-        {% if p.status %}
+{% set is_owner = current_user.is_authenticated and current_user.id == p.user_id %}
+{% set placeholder_image = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'
+viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23DBEAFE'/%3E%3Ctext x='50%25' y='50%25'
+dominant-baseline='middle' text-anchor='middle' font-size='28' fill='%231D4ED8'
+font-family='Arial'%3EStudentTrade%3C/text%3E%3C/svg%3E" %}
+<div class="relative block bg-white rounded-xl shadow-card hover:shadow-cardHover transition-all floating">
+    <a href="{{ url_for('products.detail', id=p.id) }}" class="block">
+        <div class="relative aspect-square bg-secondaryLight overflow-hidden rounded-t-xl">
+            <img src="{{ p.primary_image }}" alt="{{ p.title }}" class="w-full h-full object-cover">
+            {% if p.status %}
             {% set badge_classes = 'bg-success' %}
             {% set badge_text = '刊登中' %}
             {% if p.status == 'pending' %}
-                {% set badge_classes = 'bg-warning' %}
-                {% set badge_text = '交易中' %}
+            {% set badge_classes = 'bg-warning' %}
+            {% set badge_text = '交易中' %}
             {% elif p.status == 'sold' %}
-                {% set badge_classes = 'bg-secondary' %}
-                {% set badge_text = '已售出' %}
+            {% set badge_classes = 'bg-secondary' %}
+            {% set badge_text = '已售出' %}
             {% elif p.status == 'inactive' %}
-                {% set badge_classes = 'bg-secondary' %}
-                {% set badge_text = '已下架' %}
+            {% set badge_classes = 'bg-secondary' %}
+            {% set badge_text = '已下架' %}
             {% endif %}
             <span class="absolute top-3 right-3 px-3 py-1 rounded text-white text-xs font-semibold {{ badge_classes }}">
                 {{ badge_text }}
             </span>
-        {% endif %}
-    </div>
-    <div class="p-4 space-y-2">
-        <h3 class="font-semibold text-secondaryDark text-lg leading-tight line-clamp-2">{{ p.title }}</h3>
-        <p class="text-primary font-bold text-xl">NT$ {{ "%.2f"|format(p.price) }}</p>
-        <div class="flex justify-between text-sm text-secondary">
-            <span>狀況：{{ p.condition }}</span>
-            <span>{{ p.created_at.strftime('%m-%d') if p.created_at else '' }}</span>
+            {% endif %}
         </div>
+        <div class="p-4 space-y-2">
+            <h3 class="font-semibold text-secondaryDark text-lg leading-tight line-clamp-2">{{ p.title }}</h3>
+            <p class="text-primary font-bold text-xl">NT$ {{ "%.2f"|format(p.price) }}</p>
+            <div class="flex justify-between text-sm text-secondary">
+                <span>狀況：{{ p.condition }}</span>
+                <span>{{ p.created_at.strftime('%m-%d') if p.created_at else '' }}</span>
+            </div>
+        </div>
+    </a>
+
+    {# 商品管理按鈕（僅商家自己看到） #}
+    {% if is_owner and show_manage_buttons|default(false) %}
+    <div class="px-4 pb-4 pt-0">
+        <form method="post" action="{{ url_for('products.toggle_status', id=p.id) }}" class="w-full"
+            onsubmit="event.stopPropagation();">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if p.status == 'active' %}
+            <input type="hidden" name="status" value="inactive">
+            <button type="submit" onclick="return confirm('確定要下架此商品嗎？')"
+                class="w-full px-3 py-2 text-sm rounded-lg bg-secondary text-white hover:bg-opacity-90">
+                下架
+            </button>
+            {% else %}
+            <input type="hidden" name="status" value="active">
+            <button type="submit" class="w-full px-3 py-2 text-sm rounded-lg bg-success text-white hover:bg-opacity-90">
+                重新上架
+            </button>
+            {% endif %}
+        </form>
     </div>
-</a>
+    {% endif %}
+</div>

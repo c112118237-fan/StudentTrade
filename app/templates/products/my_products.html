@@ -2,38 +2,189 @@
 {% block title %}我的商品 - StudentTrade{% endblock %}
 
 {% block content %}
-{% set my_products = products|default([
-    {'title': 'MacBook Pro 2020', 'price': '25,000', 'status': '刊登中', 'time_ago': '1天前', 'url': '/products/1'},
-    {'title': 'Python 教科書', 'price': '300', 'status': '已售出', 'time_ago': '2天前', 'url': '/products/2'}
-], true) %}
-
 <section class="py-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-semibold text-secondaryDark">我的商品</h1>
-                <p class="text-secondary text-sm">管理你刊登的所有商品</p>
+        <!-- Header -->
+        <div class="bg-white rounded-xl shadow-card p-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-semibold text-secondaryDark mb-2">我的商品</h1>
+                    <p class="text-secondary text-sm">管理您上架的所有商品</p>
+                </div>
+                <a href="{{ url_for('products.create') }}"
+                    class="px-5 py-2 bg-primary text-white rounded-lg shadow-md hover:bg-primaryHover">
+                    + 刊登新商品
+                </a>
             </div>
-            <a href="/products/new" class="px-4 py-2 bg-primary text-white rounded-lg shadow-md hover:bg-primaryHover">刊登新商品</a>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {% for product in my_products %}
-                <div class="bg-white rounded-xl shadow-card p-4 space-y-3">
-                    <div class="h-40 rounded-lg bg-secondaryLight flex items-center justify-center text-secondary">[圖片]</div>
-                    <div>
-                        <p class="font-semibold text-secondaryDark">{{ product.title }}</p>
-                        <p class="text-primary font-bold">NT$ {{ product.price }}</p>
-                        <p class="text-sm text-secondary">狀態：{{ product.status }} · {{ product.time_ago }}</p>
-                    </div>
-                    <div class="flex gap-2 text-sm">
-                        <a class="flex-1 text-center py-2 rounded-lg border border-primary text-primary hover:bg-primaryLight" href="{{ product.url }}">查看</a>
-                        <button class="flex-1 text-center py-2 rounded-lg border border-secondaryLight text-secondary hover:bg-secondaryLight">編輯</button>
-                        <button class="flex-1 text-center py-2 rounded-lg border border-danger text-danger hover:bg-red-50">刪除</button>
-                    </div>
-                </div>
+        <!-- Status Filter -->
+        <div class="flex flex-wrap gap-3 text-sm">
+            {% set filters = [
+            {'value': 'all', 'label': '全部', 'icon': '○'},
+            {'value': 'active', 'label': '刊登中', 'icon': '●', 'color': 'success'},
+            {'value': 'inactive', 'label': '已下架', 'icon': '●', 'color': 'secondary'},
+            {'value': 'deleted', 'label': '已刪除', 'icon': '●', 'color': 'danger'}
+            ] %}
+
+            {% for filter in filters %}
+            <a href="{{ url_for('products.my_products', status=filter.value, page=1) }}"
+                class="px-4 py-2 rounded-lg flex items-center gap-2 {{ 'bg-primary text-white shadow-md' if status_filter == filter.value else 'border border-secondaryLight text-secondary hover:bg-primaryLight' }}">
+                <span class="{% if filter.color %}text-{{ filter.color }}{% endif %}">{{ filter.icon }}</span>
+                {{ filter.label }}
+            </a>
             {% endfor %}
         </div>
+
+        <!-- Products List -->
+        {% if products %}
+        <div class="space-y-4">
+            {% for product in products %}
+            <div class="bg-white rounded-xl shadow-card p-5 flex gap-4">
+                <!-- Product Image -->
+                <div class="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-secondaryLight">
+                    <img src="{{ product.primary_image }}" alt="{{ product.title }}" class="w-full h-full object-cover">
+                </div>
+
+                <!-- Product Info -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-semibold text-lg text-secondaryDark mb-1 truncate">{{ product.title }}</h3>
+                            <p class="text-primary font-bold text-xl mb-2">NT$ {{ "%.2f"|format(product.price) }}</p>
+                            <div class="flex flex-wrap gap-2 text-sm text-secondary">
+                                <span class="px-2 py-1 bg-gray-100 rounded">{{ product.condition }}</span>
+                                <span class="px-2 py-1 bg-gray-100 rounded">{{ product.created_at.strftime('%Y-%m-%d')
+                                    }}</span>
+                                <span class="px-2 py-1 bg-gray-100 rounded">瀏覽 {{ product.view_count }} 次</span>
+                            </div>
+                        </div>
+
+                        <!-- Status Badge -->
+                        <div>
+                            {% if product.status == 'active' %}
+                            <span class="px-3 py-1 bg-success text-white text-xs font-semibold rounded-full">刊登中</span>
+                            {% elif product.status == 'inactive' %}
+                            <span
+                                class="px-3 py-1 bg-secondary text-white text-xs font-semibold rounded-full">已下架</span>
+                            {% elif product.status == 'deleted' %}
+                            <span class="px-3 py-1 bg-danger text-white text-xs font-semibold rounded-full">已刪除</span>
+                            {% else %}
+                            <span class="px-3 py-1 bg-warning text-white text-xs font-semibold rounded-full">{{
+                                product.status }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-2 mt-4">
+                        <a href="{{ url_for('products.detail', id=product.id) }}"
+                            class="px-4 py-2 text-sm border border-primary text-primary rounded-lg hover:bg-primaryLight">
+                            查看
+                        </a>
+
+                        {% if product.status != 'deleted' %}
+                        <a href="{{ url_for('products.edit', id=product.id) }}"
+                            class="px-4 py-2 text-sm border border-secondary text-secondary rounded-lg hover:bg-gray-50">
+                            編輯
+                        </a>
+
+                        <!-- Toggle Status -->
+                        <form method="post" action="{{ url_for('products.toggle_status', id=product.id) }}"
+                            class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {% if product.status == 'active' %}
+                            <input type="hidden" name="status" value="inactive">
+                            <button type="submit"
+                                class="px-4 py-2 text-sm bg-secondary text-white rounded-lg hover:bg-opacity-90">
+                                下架
+                            </button>
+                            {% else %}
+                            <input type="hidden" name="status" value="active">
+                            <button type="submit"
+                                class="px-4 py-2 text-sm bg-success text-white rounded-lg hover:bg-opacity-90">
+                                重新上架
+                            </button>
+                            {% endif %}
+                        </form>
+
+                        <!-- Delete Button -->
+                        <form method="post" action="{{ url_for('products.delete', id=product.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" onclick="return confirm('確定要刪除此商品嗎？刪除後仍可在「已刪除」分類中找到。')"
+                                class="px-4 py-2 text-sm bg-danger text-white rounded-lg hover:bg-opacity-90">
+                                刪除
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <div class="flex justify-center items-center gap-2 pt-4">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('products.my_products', status=status_filter, page=pagination.prev_num) }}"
+                class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">
+                &larr;
+            </a>
+            {% else %}
+            <span class="px-3 py-2 rounded border border-secondaryLight text-gray-300 cursor-not-allowed">&larr;</span>
+            {% endif %}
+
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+            {% if page_num %}
+            {% if page_num == pagination.page %}
+            <span class="px-3 py-2 rounded bg-primary text-white shadow">{{ page_num }}</span>
+            {% else %}
+            <a href="{{ url_for('products.my_products', status=status_filter, page=page_num) }}"
+                class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">
+                {{ page_num }}
+            </a>
+            {% endif %}
+            {% else %}
+            <span class="text-secondary">...</span>
+            {% endif %}
+            {% endfor %}
+
+            {% if pagination.has_next %}
+            <a href="{{ url_for('products.my_products', status=status_filter, page=pagination.next_num) }}"
+                class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">
+                &rarr;
+            </a>
+            {% else %}
+            <span class="px-3 py-2 rounded border border-secondaryLight text-gray-300 cursor-not-allowed">&rarr;</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="bg-white rounded-xl shadow-card p-10 text-center">
+            <svg class="w-16 h-16 mx-auto text-secondary/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4">
+                </path>
+            </svg>
+            <p class="text-secondary mt-4 mb-6">
+                {% if status_filter == 'deleted' %}
+                目前沒有已刪除的商品
+                {% elif status_filter == 'inactive' %}
+                目前沒有已下架的商品
+                {% elif status_filter == 'active' %}
+                目前沒有刊登中的商品
+                {% else %}
+                您還沒有上架任何商品
+                {% endif %}
+            </p>
+            <a href="{{ url_for('products.create') }}"
+                class="inline-block px-5 py-2 bg-primary text-white rounded-lg shadow-md hover:bg-primaryHover">
+                刊登新商品
+            </a>
+        </div>
+        {% endif %}
     </div>
 </section>
 {% endblock %}

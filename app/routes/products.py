@@ -211,33 +211,87 @@ def edit(id):
 @bp.route('/products/<int:id>/delete', methods=['POST'])
 @login_required
 def delete(id):
-    """刪除商品"""
-    success, message = ProductService.delete_product(id, current_user.id)
-
-    if success:
-        flash(message, 'success')
-    else:
-        flash(message, 'error')
-
+    """刪除商品（軟刪除）"""
+    from app.models.product import Product
+    
+    product = Product.query.get_or_404(id)
+    
+    # 驗證權限
+    if product.user_id != current_user.id:
+        flash('您沒有權限刪除此商品', 'error')
+        return redirect(url_for('products.my_products'))
+    
+    # 軟刪除
+    product.status = 'deleted'
+    db.session.commit()
+    
+    flash('商品已刪除', 'success')
     return redirect(url_for('products.my_products'))
+
+@bp.route('/products/<int:id>/toggle-status', methods=['POST'])
+@login_required
+def toggle_status(id):
+    """切換商品狀態（上架/下架）"""
+    from app.models.product import Product
+    from app import db
+    
+    product = Product.query.get_or_404(id)
+    
+    # 驗證權限
+    if product.user_id != current_user.id:
+        flash('您沒有權限修改此商品', 'error')
+        return redirect(url_for('products.detail', id=id))
+    
+    # 切換狀態
+    new_status = request.form.get('status', 'inactive')
+    
+    if new_status not in ['active', 'inactive']:
+        flash('無效的狀態', 'error')
+        return redirect(url_for('products.detail', id=id))
+    
+    product.status = new_status
+    db.session.commit()
+    
+    if new_status == 'inactive':
+        flash('商品已下架', 'success')
+    else:
+        flash('商品已重新上架', 'success')
+    
+    return redirect(url_for('products.detail', id=id))
 
 @bp.route('/my-products')
 @login_required
 def my_products():
-    """我的商品"""
+    """我的商品管理"""
     page = request.args.get('page', 1, type=int)
-    status = request.args.get('status', None)
-
-    pagination = ProductService.get_user_products(
-        user_id=current_user.id,
-        status=status,
-        page=page
-    )
+    status_filter = request.args.get('status', 'all')  # all, active, inactive, deleted
+    
+    # 構建查詢
+    from app.models.product import Product
+    query = Product.query.filter_by(user_id=current_user.id)
+    
+    # 狀態篩選
+    if status_filter == 'active':
+        query = query.filter_by(status='active')
+    elif status_filter == 'inactive':
+        query = query.filter_by(status='inactive')
+    elif status_filter == 'deleted':
+        query = query.filter_by(status='deleted')
+    # 'all' 顯示除了deleted之外的所有商品
+    elif status_filter == 'all':
+        query = query.filter(Product.status.in_(['active', 'inactive']))
+    
+    # 按建立時間倒序
+    query = query.order_by(Product.created_at.desc())
+    
+    # 分頁
+    pagination = query.paginate(page=page, per_page=12, error_out=False)
 
     return render_template(
         'products/my_products.html',
         products=pagination.items,
-        pagination=pagination
+        pagination=pagination,
+        status_filter=status_filter
     )
 
 @bp.route('/my')

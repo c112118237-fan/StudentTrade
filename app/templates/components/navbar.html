@@ -69,6 +69,15 @@
                             <span>我的賣場</span>
                         </a>
                         <a class="flex items-center gap-2 px-4 py-2 hover:bg-primaryLight transition"
+                            href="{{ url_for('products.my_products') }}">
+                            <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                                </path>
+                            </svg>
+                            <span>商品管理</span>
+                        </a>
+                        <a class="flex items-center gap-2 px-4 py-2 hover:bg-primaryLight transition"
                             href="{{ url_for('auth.profile') }}">
                             <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
