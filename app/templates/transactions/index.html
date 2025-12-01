@@ -2,11 +2,6 @@
 {% block title %}我的交易 - StudentTrade{% endblock %}
 
 {% block content %}
-{% set transactions = transactions|default([
-    {'id': 123, 'title': 'MacBook Pro 2020', 'amount': '25,000', 'role': 'buyer', 'status': '待回應', 'status_class': 'warning', 'time': '2024-11-29 10:30', 'note': '可以面交嗎？'},
-    {'id': 122, 'title': 'Python 程式設計', 'amount': '300', 'role': 'buyer', 'status': '已完成', 'status_class': 'success', 'time': '2024-11-28 15:20'}
-], true) %}
-
 <section class="py-10">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div class="flex items-center justify-between">
@@ -16,64 +11,154 @@
             </div>
         </div>
 
+        <!-- Role Filter -->
         <div class="flex flex-wrap gap-3 text-sm">
-            <button class="px-4 py-2 rounded-lg bg-primary text-white shadow-md">我是買家 (5)</button>
-            <button class="px-4 py-2 rounded-lg border border-secondaryLight text-secondary hover:bg-primaryLight">我是賣家 (3)</button>
+            {% set current_role = request.args.get('role', 'all') %}
+            <a href="{{ url_for('transactions.index', role='all', status=request.args.get('status')) }}"
+                class="px-4 py-2 rounded-lg {{ 'bg-primary text-white shadow-md' if current_role == 'all' else 'border border-secondaryLight text-secondary hover:bg-primaryLight' }}">
+                全部交易
+            </a>
+            <a href="{{ url_for('transactions.index', role='buyer', status=request.args.get('status')) }}"
+                class="px-4 py-2 rounded-lg {{ 'bg-primary text-white shadow-md' if current_role == 'buyer' else 'border border-secondaryLight text-secondary hover:bg-primaryLight' }}">
+                我是買家
+            </a>
+            <a href="{{ url_for('transactions.index', role='seller', status=request.args.get('status')) }}"
+                class="px-4 py-2 rounded-lg {{ 'bg-primary text-white shadow-md' if current_role == 'seller' else 'border border-secondaryLight text-secondary hover:bg-primaryLight' }}">
+                我是賣家
+            </a>
         </div>
 
+        <!-- Status Filter -->
         <div class="flex flex-wrap gap-3 text-sm items-center">
-            <label class="text-secondary">篩選:</label>
-            <select class="px-3 py-2 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary">
-                <option>全部狀態</option>
-                <option>待回應</option>
-                <option>已接受</option>
-                <option>已完成</option>
-                <option>已取消</option>
-            </select>
-            <select class="px-3 py-2 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary">
-                <option>最新優先</option>
-                <option>金額：高到低</option>
-                <option>金額：低到高</option>
-            </select>
+            <label class="text-secondary">篩選狀態:</label>
+            {% set current_status = request.args.get('status', '') %}
+            <a href="{{ url_for('transactions.index', role=request.args.get('role', 'all'), status='') }}"
+                class="px-3 py-2 rounded-full border {{ 'border-primary bg-primary text-white font-medium' if current_status == '' else 'border-secondaryLight text-secondary hover:border-primary hover:text-primary' }}">
+                全部狀態
+            </a>
+            <a href="{{ url_for('transactions.index', role=request.args.get('role', 'all'), status='pending') }}"
+                class="px-3 py-2 rounded-full border {{ 'border-primary bg-primary text-white font-medium' if current_status == 'pending' else 'border-secondaryLight text-secondary hover:border-primary hover:text-primary' }}">
+                待回應
+            </a>
+            <a href="{{ url_for('transactions.index', role=request.args.get('role', 'all'), status='accepted') }}"
+                class="px-3 py-2 rounded-full border {{ 'border-primary bg-primary text-white font-medium' if current_status == 'accepted' else 'border-secondaryLight text-secondary hover:border-primary hover:text-primary' }}">
+                已接受
+            </a>
+            <a href="{{ url_for('transactions.index', role=request.args.get('role', 'all'), status='completed') }}"
+                class="px-3 py-2 rounded-full border {{ 'border-primary bg-primary text-white font-medium' if current_status == 'completed' else 'border-secondaryLight text-secondary hover:border-primary hover:text-primary' }}">
+                已完成
+            </a>
+            <a href="{{ url_for('transactions.index', role=request.args.get('role', 'all'), status='cancelled') }}"
+                class="px-3 py-2 rounded-full border {{ 'border-primary bg-primary text-white font-medium' if current_status == 'cancelled' else 'border-secondaryLight text-secondary hover:border-primary hover:text-primary' }}">
+                已取消
+            </a>
         </div>
 
+        <!-- Transaction List -->
         <div class="space-y-4">
+            {% if transactions %}
             {% for tx in transactions %}
-                <div class="bg-white rounded-xl shadow-card p-5 space-y-4">
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                        <div class="text-secondaryDark font-semibold">交易 #{{ tx.id }}</div>
-                        {% set badge_color = 'bg-yellow-100 text-warning border border-warning/60' %}
-                        {% if tx.status_class == 'success' %}{% set badge_color = 'bg-green-100 text-success border border-success/60' %}{% endif %}
-                        {% if tx.status_class == 'info' %}{% set badge_color = 'bg-blue-100 text-primary border border-primary/60' %}{% endif %}
-                        {% if tx.status_class == 'danger' %}{% set badge_color = 'bg-red-100 text-danger border border-danger/60' %}{% endif %}
-                        <span class="px-3 py-1 rounded {{ badge_color }} text-sm font-semibold">{{ tx.status }}</span>
+            <div class="bg-white rounded-xl shadow-card p-5 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="text-secondaryDark font-semibold">交易 #{{ tx.id }}</div>
+                    {% if tx.status == 'pending' %}
+                    <span
+                        class="px-3 py-1 rounded bg-yellow-100 text-warning border border-warning/60 text-sm font-semibold">待回應</span>
+                    {% elif tx.status == 'accepted' %}
+                    <span
+                        class="px-3 py-1 rounded bg-blue-100 text-primary border border-primary/60 text-sm font-semibold">已接受</span>
+                    {% elif tx.status == 'completed' %}
+                    <span
+                        class="px-3 py-1 rounded bg-green-100 text-success border border-success/60 text-sm font-semibold">已完成</span>
+                    {% elif tx.status == 'cancelled' %}
+                    <span
+                        class="px-3 py-1 rounded bg-red-100 text-danger border border-danger/60 text-sm font-semibold">已取消</span>
+                    {% elif tx.status == 'rejected' %}
+                    <span
+                        class="px-3 py-1 rounded bg-red-100 text-danger border border-danger/60 text-sm font-semibold">已拒絕</span>
+                    {% else %}
+                    <span
+                        class="px-3 py-1 rounded bg-gray-100 text-secondary border border-secondary/60 text-sm font-semibold">{{
+                        tx.status }}</span>
+                    {% endif %}
+                </div>
+                <div class="flex gap-4">
+                    {% if tx.product and tx.product.images %}
+                    <img src="{{ url_for('static', filename='uploads/' + tx.product.images[0].image_url) }}"
+                        alt="{{ tx.product.title }}" class="w-16 h-16 rounded-lg object-cover flex-shrink-0">
+                    {% else %}
+                    <div class="w-16 h-16 rounded-lg bg-secondaryLight flex-shrink-0"></div>
+                    {% endif %}
+                    <div class="flex-1 space-y-1 text-sm">
+                        <p class="text-secondaryDark font-medium">{{ tx.product.title if tx.product else '已刪除的商品' }}</p>
+                        <p class="text-secondary">交易金額：NT$ {{ '{:,.0f}'.format(tx.amount) }}</p>
+                        <p class="text-secondary">角色：{{ '買家' if tx.buyer_id == current_user.id else '賣家' }}</p>
+                        <p class="text-secondary">時間：{{ tx.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        {% if tx.notes %}<p class="text-secondary">備註：{{ tx.notes }}</p>{% endif %}
                     </div>
-                    <div class="flex gap-4">
-                        <div class="w-16 h-16 rounded-lg bg-secondaryLight flex-shrink-0"></div>
-                        <div class="flex-1 space-y-1 text-sm">
-                            <p class="text-secondaryDark font-medium">{{ tx.title }}</p>
-                            <p class="text-secondary">交易金額：NT$ {{ tx.amount }}</p>
-                            <p class="text-secondary">角色：{{ '買家' if tx.role == 'buyer' else '賣家' }}</p>
-                            <p class="text-secondary">時間：{{ tx.time }}</p>
-                            {% if tx.note %}<p class="text-secondary">備註：{{ tx.note }}</p>{% endif %}
-                        </div>
-                        <div class="flex flex-col gap-2 min-w-[120px]">
-                            <a class="px-3 py-2 rounded-lg border border-primary text-primary text-center hover:bg-primaryLight" href="/transactions/{{ tx.id }}">查看詳情</a>
-                            {% if tx.status == '已完成' %}
-                                <a class="px-3 py-2 rounded-lg bg-primary text-white text-center hover:bg-primaryHover" href="/reviews/new/{{ tx.id }}">評價</a>
-                            {% endif %}
-                        </div>
+                    <div class="flex flex-col gap-2 min-w-[120px]">
+                        <a class="px-3 py-2 rounded-lg border border-primary text-primary text-center text-sm hover:bg-primaryLight"
+                            href="{{ url_for('transactions.detail', id=tx.id) }}">查看詳情</a>
+                        {% if tx.status == 'completed' and tx.buyer_id == current_user.id %}
+                        <a class="px-3 py-2 rounded-lg bg-primary text-white text-center text-sm hover:bg-primaryHover"
+                            href="/reviews/new?transaction_id={{ tx.id }}">評價</a>
+                        {% endif %}
                     </div>
                 </div>
+            </div>
             {% endfor %}
+            {% else %}
+            <div class="bg-white rounded-xl shadow-card p-10 text-center">
+                <svg class="w-16 h-16 mx-auto text-secondary/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                </svg>
+                <p class="text-secondary mt-4">目前沒有交易紀錄</p>
+            </div>
+            {% endif %}
         </div>
 
-        <div class="flex justify-center gap-2 pt-2">
-            <button class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">1</button>
-            <button class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">2</button>
-            <button class="px-3 py-2 rounded bg-primary text-white shadow">3</button>
-            <button class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">→</button>
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <div class="flex justify-center items-center gap-2 pt-4">
+            {# 上一頁 #}
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('transactions.index', page=pagination.prev_num, role=request.args.get('role', 'all'), status=request.args.get('status')) }}"
+                class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">
+                &larr;
+            </a>
+            {% else %}
+            <span class="px-3 py-2 rounded border border-secondaryLight text-gray-300 cursor-not-allowed">&larr;</span>
+            {% endif %}
+
+            {# 頁碼 #}
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+            {% if page_num %}
+            {% if page_num == pagination.page %}
+            <span class="px-3 py-2 rounded bg-primary text-white shadow">{{ page_num }}</span>
+            {% else %}
+            <a href="{{ url_for('transactions.index', page=page_num, role=request.args.get('role', 'all'), status=request.args.get('status')) }}"
+                class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">
+                {{ page_num }}
+            </a>
+            {% endif %}
+            {% else %}
+            <span class="text-secondary">...</span>
+            {% endif %}
+            {% endfor %}
+
+            {# 下一頁 #}
+            {% if pagination.has_next %}
+            <a href="{{ url_for('transactions.index', page=pagination.next_num, role=request.args.get('role', 'all'), status=request.args.get('status')) }}"
+                class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">
+                &rarr;
+            </a>
+            {% else %}
+            <span class="px-3 py-2 rounded border border-secondaryLight text-gray-300 cursor-not-allowed">&rarr;</span>
+            {% endif %}
         </div>
+        {% endif %}
     </div>
 </section>
 {% endblock %}
