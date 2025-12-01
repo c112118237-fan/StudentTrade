@@ -239,3 +239,31 @@ def my_products():
         products=pagination.items,
         pagination=pagination
     )
+
+@bp.route('/my')
+@login_required
+def my():
+    """我的賣場（重定向到seller頁面）"""
+    return redirect(url_for('products.seller', user_id=current_user.id))
+
+@bp.route('/seller/<int:user_id>')
+def seller(user_id):
+    """賣家個人頁面"""
+    from app.models.user import User
+    
+    seller = User.query.get_or_404(user_id)
+    page = request.args.get('page', 1, type=int)
+    
+    # 獲取該賣家的所有上架商品（僅顯示 available 狀態）
+    pagination = ProductService.get_user_products(
+        user_id=user_id,
+        status='available',
+        page=page
+    )
+    
+    return render_template(
+        'products/seller.html',
+        seller=seller,
+        products=pagination.items,
+        pagination=pagination
+    )

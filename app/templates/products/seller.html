@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}{{ seller.username }} 的賣場 - StudentTrade{% endblock %}
+
+{% block content %}
+<section class="py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Seller Profile Card -->
+        <div class="bg-white rounded-xl shadow-card p-6 mb-8">
+            <div class="flex items-center gap-6">
+                <div
+                    class="w-24 h-24 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-3xl flex-shrink-0">
+                    {{ seller.username[0]|upper }}
+                </div>
+                <div class="flex-1">
+                    <h1 class="text-2xl font-semibold text-secondaryDark mb-2">{{ seller.username }}</h1>
+                    {% if seller.email %}
+                    <p class="text-secondary text-sm mb-1">{{ seller.email }}</p>
+                    {% endif %}
+                    <p class="text-secondary text-sm">會員自 {{ seller.created_at.strftime('%Y年%m月') }}</p>
+                    <div class="flex gap-4 mt-3 text-sm">
+                        <div class="px-3 py-1 bg-primaryLight rounded-full">
+                            <span class="text-secondary">上架商品：</span>
+                            <span class="font-semibold text-primary">{{ pagination.total }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% if current_user.is_authenticated and current_user.id != seller.id %}
+                <div class="flex flex-col gap-2">
+                    <a href="{{ url_for('messages.index', other_user_id=seller.id) }}"
+                        class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primaryHover text-center">
+                        聊聊
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Products Section -->
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-secondaryDark mb-2">{{ seller.username }} 的商品</h2>
+            <p class="text-secondary text-sm">共 {{ pagination.total }} 項商品</p>
+        </div>
+
+        <!-- Product Grid -->
+        {% if products %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {% for product in products %}
+            {% include 'components/product_card.html' with context %}
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <div class="flex justify-center items-center gap-2 pt-8">
+            {# 上一頁 #}
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('products.seller', user_id=seller.id, page=pagination.prev_num) }}"
+                class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">
+                &larr;
+            </a>
+            {% else %}
+            <span class="px-3 py-2 rounded border border-secondaryLight text-gray-300 cursor-not-allowed">&larr;</span>
+            {% endif %}
+
+            {# 頁碼 #}
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+            {% if page_num %}
+            {% if page_num == pagination.page %}
+            <span class="px-3 py-2 rounded bg-primary text-white shadow">{{ page_num }}</span>
+            {% else %}
+            <a href="{{ url_for('products.seller', user_id=seller.id, page=page_num) }}"
+                class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">
+                {{ page_num }}
+            </a>
+            {% endif %}
+            {% else %}
+            <span class="text-secondary">...</span>
+            {% endif %}
+            {% endfor %}
+
+            {# 下一頁 #}
+            {% if pagination.has_next %}
+            <a href="{{ url_for('products.seller', user_id=seller.id, page=pagination.next_num) }}"
+                class="px-3 py-2 rounded border border-secondaryLight hover:bg-primaryLight">
+                &rarr;
+            </a>
+            {% else %}
+            <span class="px-3 py-2 rounded border border-secondaryLight text-gray-300 cursor-not-allowed">&rarr;</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="bg-white rounded-xl shadow-card p-10 text-center">
+            <svg class="w-16 h-16 mx-auto text-secondary/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4">
+                </path>
+            </svg>
+            <p class="text-secondary mt-4">目前沒有上架商品</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
