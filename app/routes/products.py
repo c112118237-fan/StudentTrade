@@ -254,10 +254,10 @@ def seller(user_id):
     seller = User.query.get_or_404(user_id)
     page = request.args.get('page', 1, type=int)
     
-    # 獲取該賣家的所有上架商品（僅顯示 available 狀態）
+    # 獲取該賣家的所有上架商品（僅顯示 active 狀態）
     pagination = ProductService.get_user_products(
         user_id=user_id,
-        status='available',
+        status='active',
         page=page
     )
     

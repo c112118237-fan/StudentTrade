@@ -233,7 +233,7 @@ class AuthService:
         # 上架商品數
         active_products = Product.query.filter_by(
             user_id=user.id,
-            status='available'
+            status='active'
         ).count()
         
         # 完成交易數（作為買家或賣家）

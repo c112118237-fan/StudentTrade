@@ -71,6 +71,31 @@ class ProductService:
         return query.paginate(page=page, per_page=per_page, error_out=False)
 
     @staticmethod
+    def get_user_products(user_id, status=None, page=1, per_page=12):
+        """取得特定使用者的商品
+        
+        Args:
+            user_id: 使用者 ID
+            status: 商品狀態篩選（選填）
+            page: 頁碼
+            per_page: 每頁數量
+            
+        Returns:
+            Pagination 物件
+        """
+        query = Product.query.filter_by(user_id=user_id)
+        
+        # 狀態篩選
+        if status:
+            query = query.filter_by(status=status)
+        
+        # 按建立時間倒序排列
+        query = query.order_by(Product.created_at.desc())
+        
+        # 分頁
+        return query.paginate(page=page, per_page=per_page, error_out=False)
+
+    @staticmethod
     def get_product_by_id(product_id, increment_view=False):
         """取得單一商品
 
