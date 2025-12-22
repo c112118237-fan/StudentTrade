@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import current_user
 from app.services.product_service import ProductService
+from app.services.notification_service import ReviewService
 from app.models.category import Category
 from app.extensions import db
 from app.utils.decorators import login_required
@@ -85,10 +86,13 @@ def detail(id):
     ).items
     similar_products = [p for p in similar_products if p.id != id]
 
+    seller_stats = ReviewService.get_user_stats(product.user_id)
+
     return render_template(
         'products/detail.html',
         product=product,
-        similar_products=similar_products
+        similar_products=similar_products,
+        seller_stats=seller_stats
     )
 
 @bp.route('/products/new', methods=['GET', 'POST'])
@@ -315,9 +319,12 @@ def seller(user_id):
         page=page
     )
     
+    seller_stats = ReviewService.get_user_stats(user_id)
+
     return render_template(
         'products/seller.html',
         seller=seller,
         products=pagination.items,
-        pagination=pagination
+        pagination=pagination,
+        seller_stats=seller_stats
     )

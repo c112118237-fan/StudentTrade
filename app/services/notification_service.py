@@ -191,13 +191,11 @@ class ReviewService:
             if transaction.status != 'completed':
                 return False, '只能對已完成的交易進行評價'
 
-            # 確定評價者和被評價者
-            if reviewer_id == transaction.buyer_id:
-                reviewee_id = transaction.seller_id
-            elif reviewer_id == transaction.seller_id:
-                reviewee_id = transaction.buyer_id
-            else:
-                return False, '您沒有權限評價此交易'
+            # 僅允許買家評價賣家
+            if reviewer_id != transaction.buyer_id:
+                return False, '只有買家可以評價賣家'
+
+            reviewee_id = transaction.seller_id
 
             # 檢查是否已經評價過
             existing_review = Review.query.filter_by(
@@ -288,9 +286,9 @@ class ReviewService:
         if transaction.status != 'completed':
             return False, '只能對已完成的交易進行評價'
 
-        # 檢查是否為交易參與者
-        if user_id not in [transaction.buyer_id, transaction.seller_id]:
-            return False, '您不是此交易的參與者'
+        # 檢查是否為買家
+        if user_id != transaction.buyer_id:
+            return False, '只有買家可以評價賣家'
 
         # 檢查是否已評價
         existing_review = Review.query.filter_by(

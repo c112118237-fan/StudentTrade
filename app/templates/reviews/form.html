@@ -11,33 +11,48 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border border-secondaryLight rounded-lg p-4">
-                <div class="w-20 h-20 bg-secondaryLight rounded-lg mx-auto md:mx-0"></div>
+                <div class="w-20 h-20 bg-secondaryLight rounded-lg mx-auto md:mx-0 overflow-hidden">
+                    {% if transaction.product %}
+                    <img src="{{ transaction.product.primary_image }}" alt="{{ transaction.product.title }}"
+                         class="w-full h-full object-cover">
+                    {% endif %}
+                </div>
                 <div class="md:col-span-2 space-y-1 text-sm text-secondary">
-                    <p class="text-secondaryDark font-semibold">MacBook Pro 2020</p>
-                    <p>交易金額：NT$ 25,000</p>
-                    <p>完成時間：2024-11-29</p>
+                    <p class="text-secondaryDark font-semibold">{{ transaction.product.title if transaction.product else '已刪除的商品' }}</p>
+                    <p>交易金額：NT$ {{ '{:,.0f}'.format(transaction.amount) }}</p>
+                    {% if transaction.completed_at %}
+                    <p>完成時間：{{ transaction.completed_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    {% endif %}
                 </div>
             </div>
 
-            <form class="space-y-4">
+            {% set review_target = transaction.seller %}
+            {% set review_role = '賣家' %}
+
+            <form method="POST" action="{{ url_for('reviews.create', transaction_id=transaction.id) }}" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div>
-                    <p class="text-secondaryDark font-medium">評價對象：王小明（賣家）</p>
+                    <p class="text-secondaryDark font-medium">評價對象：{{ review_target.username if review_target else '未知' }}（{{ review_role }}）</p>
                 </div>
                 <div class="space-y-2">
                     <p class="text-sm font-medium text-secondaryDark">評分 *</p>
                     <div class="flex items-center gap-2 text-base">
                         {% for i in range(1,6) %}
-                            <button type="button" data-rating-star="{{ i }}" class="w-9 h-9 rounded-full border border-secondaryLight text-secondary hover:border-primary hover:text-primary">
-                                {{ i }}
+                            <button type="button" data-rating-star="{{ i }}"
+                                class="w-9 h-9 rounded-full flex items-center justify-center text-secondary hover:text-yellow-400 transition-colors"
+                                aria-label="{{ i }} 星">
+                                <svg class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975a1 1 0 00.95.69h4.184c.969 0 1.371 1.24.588 1.81l-3.389 2.463a1 1 0 00-.364 1.118l1.286 3.974c.3.922-.755 1.688-1.538 1.118l-3.389-2.463a1 1 0 00-1.175 0l-3.389 2.463c-.783.57-1.838-.196-1.538-1.118l1.286-3.974a1 1 0 00-.364-1.118L2.01 9.402c-.783-.57-.38-1.81.588-1.81h4.184a1 1 0 00.95-.69l1.286-3.975z"></path>
+                                </svg>
                             </button>
                         {% endfor %}
                         <input type="hidden" name="rating" value="0">
-                        <span data-rating-label class="text-sm text-secondary ml-2">點擊分數評分</span>
+                        <span data-rating-label class="text-sm text-secondary ml-2">點擊星星評分</span>
                     </div>
                 </div>
                 <div class="space-y-2">
                     <label class="text-sm font-medium text-secondaryDark">評價內容（選填）</label>
-                    <textarea rows="5" class="w-full px-4 py-3 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary" placeholder="說說你對這次交易的感受..."></textarea>
+                    <textarea name="comment" rows="5" class="w-full px-4 py-3 rounded-md border border-secondaryLight focus:ring-2 focus:ring-primary/60 focus:border-primary" placeholder="說說你對這次交易的感受..."></textarea>
                 </div>
                 <div class="flex justify-end gap-3">
                     <a class="px-4 py-2 rounded-lg border border-secondaryLight text-secondary hover:bg-secondaryLight" href="/transactions">稍後再說</a>

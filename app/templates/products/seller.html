@@ -17,6 +17,24 @@
                     <p class="text-secondary text-sm mb-1">{{ seller.email }}</p>
                     {% endif %}
                     <p class="text-secondary text-sm">會員自 {{ seller.created_at.strftime('%Y年%m月') }}</p>
+                    {% if seller_stats %}
+                    <div class="flex items-center gap-2 mt-2 text-sm">
+                        <div class="flex items-center gap-1">
+                            {% for i in range(1, 6) %}
+                                {% set active = i <= seller_stats.average_rating|round(0) %}
+                                <svg class="w-4 h-4 {{ 'text-yellow-400' if active else 'text-secondary/40' }}" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975a1 1 0 00.95.69h4.184c.969 0 1.371 1.24.588 1.81l-3.389 2.463a1 1 0 00-.364 1.118l1.286 3.974c.3.922-.755 1.688-1.538 1.118l-3.389-2.463a1 1 0 00-1.175 0l-3.389 2.463c-.783.57-1.838-.196-1.538-1.118l1.286-3.974a1 1 0 00-.364-1.118L2.01 9.402c-.783-.57-.38-1.81.588-1.81h4.184a1 1 0 00.95-.69l1.286-3.975z"></path>
+                                </svg>
+                            {% endfor %}
+                        </div>
+                        {% if seller_stats.total_reviews > 0 %}
+                        <span class="text-secondary">{{ seller_stats.average_rating }} / 5 ({{ seller_stats.total_reviews }} 則評價)</span>
+                        {% else %}
+                        <span class="text-secondary">尚無評價</span>
+                        {% endif %}
+                        <a class="text-primary text-sm hover:text-primaryHover" href="{{ url_for('reviews.user_reviews', user_id=seller.id) }}">查看評價</a>
+                    </div>
+                    {% endif %}
                     <div class="flex gap-4 mt-3 text-sm">
                         <div class="px-3 py-1 bg-primaryLight rounded-full">
                             <span class="text-secondary">上架商品：</span>

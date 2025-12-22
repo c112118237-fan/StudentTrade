@@ -13,6 +13,25 @@
                     class="inline-flex items-center gap-1 px-3 md:px-4 py-2 bg-primary text-white rounded-lg shadow-md hover:bg-primaryHover text-sm md:text-base">
                     <span>刊登商品</span>
                 </a>
+                <a href="{{ url_for('transactions.index', role='seller', status='pending') if 'transactions' in globals() else '/transactions?role=seller&status=pending' }}"
+                    class="text-secondary text-sm font-medium relative inline-flex items-center gap-1 hover:text-primary"
+                    aria-label="交易通知">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7h8M8 12h8m-7 5h6M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z">
+                        </path>
+                    </svg>
+                    <span class="hidden md:inline">交易</span>
+                    {% if pending_transactions > 0 %}
+                    <span id="pending-tx-badge"
+                        class="absolute -top-1 -right-2 bg-warning text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                        {{ pending_transactions if pending_transactions <= 9 else '9+' }}
+                    </span>
+                    {% else %}
+                    <span id="pending-tx-badge"
+                        class="hidden absolute -top-1 -right-2 bg-warning text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1"></span>
+                    {% endif %}
+                </a>
                 <a href="{{ url_for('messages.index') if 'messages' in globals() else '/messages' }}"
                     class="text-secondary text-sm font-medium relative" aria-label="聊聊">
                     聊聊

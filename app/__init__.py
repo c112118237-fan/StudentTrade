@@ -116,13 +116,19 @@ def register_context_processors(app):
             format_price
         )
 
-        # 如果使用者已登入，取得未讀訊息和通知數量
+        # 如果使用者已登入，取得未讀訊息、通知與待處理交易數量
         unread_messages = 0
         unread_notifications = 0
+        pending_transactions = 0
 
         if current_user.is_authenticated:
+            from app.models.transaction import Transaction
             unread_messages = MessageService.get_unread_count(current_user.id)
             unread_notifications = NotificationService.get_unread_count(current_user.id)
+            pending_transactions = Transaction.query.filter_by(
+                seller_id=current_user.id,
+                status=Transaction.STATUS_PENDING
+            ).count()
 
         # 提供一個 globals 函數給模板使用（為了兼容前端模板）
         def template_globals():
@@ -140,6 +146,7 @@ def register_context_processors(app):
         return {
             'unread_messages': unread_messages,
             'unread_notifications': unread_notifications,
+            'pending_transactions': pending_transactions,
             'get_product_condition_label': get_product_condition_label,
             'get_product_status_label': get_product_status_label,
             'get_transaction_status_label': get_transaction_status_label,

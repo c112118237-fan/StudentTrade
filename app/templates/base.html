@@ -91,6 +91,21 @@
             }
         });
 
+        // Handle pending transaction count updates
+        socket.on('update_pending_transactions', function (data) {
+            console.log('Pending transaction count update:', data.count);
+
+            const badge = document.getElementById('pending-tx-badge');
+            if (badge) {
+                if (data.count > 0) {
+                    badge.textContent = data.count <= 9 ? data.count : '9+';
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        });
+
         // Handle new message notifications (when user is not in chat page)
         socket.on('new_message_notification', function (data) {
             console.log('New message notification:', data);
@@ -105,6 +120,18 @@
             // Play notification sound (optional)
             // const audio = new Audio('/static/sounds/notification.mp3');
             // audio.play();
+        });
+
+        // Handle new transaction notifications
+        socket.on('new_transaction_notification', function (data) {
+            console.log('New transaction notification:', data);
+
+            if (typeof Toast !== 'undefined' && Toast.warning) {
+                const buyer = data.buyer_username || '有人';
+                const title = data.product_title || '您的商品';
+                const message = `${buyer} 發起交易：${title}`;
+                Toast.warning(message, 5000);
+            }
         });
         }) ();
     </script>

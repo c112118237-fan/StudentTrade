@@ -1,4 +1,4 @@
-from app.extensions import db
+from app.extensions import db, socketio
 from app.models.transaction import Transaction
 from app.models.product import Product
 from app.models.notification import Notification
@@ -69,6 +69,12 @@ class TransactionService:
                 content=f'您的商品「{product.title}」收到新的交易請求',
                 link=f'/transactions/{transaction.id}'
             )
+            TransactionService._emit_pending_transactions(
+                user_id=product.user_id,
+                buyer_id=buyer_id,
+                product_title=product.title,
+                transaction_id=transaction.id
+            )
 
             return True, transaction
 
@@ -113,6 +119,7 @@ class TransactionService:
                 content=f'您的交易請求「{transaction.product.title}」已被賣家接受',
                 link=f'/transactions/{transaction.id}'
             )
+            TransactionService._emit_pending_transactions(user_id=transaction.seller_id)
 
             return True, transaction
 
@@ -163,6 +170,7 @@ class TransactionService:
                 content=f'您的交易請求「{transaction.product.title}」已被賣家拒絕',
                 link=f'/transactions/{transaction.id}'
             )
+            TransactionService._emit_pending_transactions(user_id=transaction.seller_id)
 
             return True, '交易已拒絕'
 
@@ -264,6 +272,7 @@ class TransactionService:
                 content=f'交易「{transaction.product.title}」已被取消',
                 link=f'/transactions/{transaction.id}'
             )
+            TransactionService._emit_pending_transactions(user_id=transaction.seller_id)
 
             return True, '交易已取消'
 
@@ -490,3 +499,32 @@ class TransactionService:
             db.session.commit()
         except Exception as e:
             db.session.rollback()
+
+    @staticmethod
+    def _emit_pending_transactions(user_id, buyer_id=None, product_title=None, transaction_id=None):
+        try:
+            pending_count = Transaction.query.filter_by(
+                seller_id=user_id,
+                status=Transaction.STATUS_PENDING
+            ).count()
+            socketio.emit(
+                'update_pending_transactions',
+                {'count': pending_count},
+                room=f'user_{user_id}'
+            )
+
+            if buyer_id and product_title and transaction_id:
+                from app.models.user import User
+                buyer = User.query.get(buyer_id)
+                buyer_name = buyer.username if buyer else '有人'
+                socketio.emit(
+                    'new_transaction_notification',
+                    {
+                        'buyer_username': buyer_name,
+                        'product_title': product_title,
+                        'transaction_id': transaction_id
+                    },
+                    room=f'user_{user_id}'
+                )
+        except Exception:
+            pass

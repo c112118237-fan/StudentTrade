@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import current_user
 from app.services.transaction_service import TransactionService
+from app.services.notification_service import ReviewService
 from app.utils.decorators import login_required
 
 bp = Blueprint('transactions', __name__, url_prefix='/transactions')
@@ -39,7 +40,15 @@ def detail(id):
     if transaction.buyer_id != current_user.id and transaction.seller_id != current_user.id:
         abort(403)
 
-    return render_template('transactions/detail.html', transaction=transaction)
+    seller_stats = None
+    if transaction.buyer_id == current_user.id:
+        seller_stats = ReviewService.get_user_stats(transaction.seller_id)
+
+    return render_template(
+        'transactions/detail.html',
+        transaction=transaction,
+        seller_stats=seller_stats
+    )
 
 @bp.route('/create', methods=['POST'])
 @login_required
