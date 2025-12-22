@@ -195,9 +195,9 @@ class TransactionService:
             if not transaction:
                 return False, '交易不存在'
 
-            # 驗證權限（買家或賣家都可以完成交易）
-            if transaction.buyer_id != user_id and transaction.seller_id != user_id:
-                return False, '您沒有權限操作此交易'
+            # 僅允許買家確認完成
+            if transaction.buyer_id != user_id:
+                return False, '只有買家可以確認完成'
 
             # 檢查交易狀態
             if not transaction.can_complete():
@@ -245,9 +245,9 @@ class TransactionService:
             if not transaction:
                 return False, '交易不存在'
 
-            # 驗證權限
-            if transaction.buyer_id != user_id and transaction.seller_id != user_id:
-                return False, '您沒有權限操作此交易'
+            # 僅允許賣家開始交易
+            if transaction.seller_id != user_id:
+                return False, '只有賣家可以開始交易'
 
             # 檢查交易狀態
             if not transaction.can_cancel():
@@ -358,12 +358,17 @@ class TransactionService:
             db.session.commit()
 
             # 建立通知給對方
-            other_user_id = transaction.seller_id if user_id == transaction.buyer_id else transaction.buyer_id
             TransactionService._create_notification(
-                user_id=other_user_id,
+                user_id=transaction.buyer_id,
                 type='transaction_in_progress',
                 content=f'交易「{transaction.product.title}」已開始進行',
                 link=f'/transactions/{transaction.id}'
+            )
+            TransactionService._emit_transaction_in_progress(
+                buyer_id=transaction.buyer_id,
+                seller_id=transaction.seller_id,
+                product_title=transaction.product.title,
+                transaction_id=transaction.id
             )
 
             return True, '交易已開始進行'
@@ -489,14 +494,13 @@ class TransactionService:
             link: 連結
         """
         try:
-            notification = Notification(
+            from app.services.notification_service import NotificationService
+            NotificationService.create_notification(
                 user_id=user_id,
                 type=type,
                 content=content,
                 link=link
             )
-            db.session.add(notification)
-            db.session.commit()
         except Exception as e:
             db.session.rollback()
 
@@ -526,5 +530,23 @@ class TransactionService:
                     },
                     room=f'user_{user_id}'
                 )
+        except Exception:
+            pass
+
+    @staticmethod
+    def _emit_transaction_in_progress(buyer_id, seller_id, product_title, transaction_id):
+        try:
+            from app.models.user import User
+            seller = User.query.get(seller_id)
+            seller_name = seller.username if seller else '賣家'
+            socketio.emit(
+                'transaction_in_progress_notification',
+                {
+                    'seller_username': seller_name,
+                    'product_title': product_title,
+                    'transaction_id': transaction_id
+                },
+                room=f'user_{buyer_id}'
+            )
         except Exception:
             pass

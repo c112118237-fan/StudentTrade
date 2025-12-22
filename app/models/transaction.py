@@ -58,7 +58,7 @@ class Transaction(db.Model):
 
     def can_complete(self):
         """是否可以完成交易"""
-        return self.status in [self.STATUS_ACCEPTED, self.STATUS_IN_PROGRESS]
+        return self.status == self.STATUS_IN_PROGRESS
 
     def can_cancel(self):
         """是否可以取消交易"""

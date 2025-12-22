@@ -145,16 +145,9 @@
                                     onclick="return confirm('確定要取消這筆交易嗎？')">取消交易</button>
                         </form>
                     {% elif transaction.status == 'accepted' %}
-                        <form method="POST" action="{{ url_for('transactions.start_progress', id=transaction.id) }}" class="inline">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="px-4 py-2 rounded-lg bg-purple-600 text-white shadow-md hover:bg-purple-700"
-                                    onclick="return confirm('確定要開始進行交易嗎？')">開始交易</button>
-                        </form>
-                        <form method="POST" action="{{ url_for('transactions.complete', id=transaction.id) }}" class="inline">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="px-4 py-2 rounded-lg bg-success text-white shadow-md hover:bg-emerald-600"
-                                    onclick="return confirm('確認交易已完成？')">確認完成</button>
-                        </form>
+                        <div class="px-4 py-2 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+                            等待賣家開始交易
+                        </div>
                         <button type="button" class="px-4 py-2 rounded-lg border border-orange-500 text-orange-600 hover:bg-orange-50"
                                 onclick="showDisputeModal()">提出爭議</button>
                         <form method="POST" action="{{ url_for('transactions.cancel', id=transaction.id) }}" class="inline">
@@ -196,11 +189,6 @@
                             <button type="submit" class="px-4 py-2 rounded-lg bg-purple-600 text-white shadow-md hover:bg-purple-700"
                                     onclick="return confirm('確定要開始進行交易嗎？')">開始交易</button>
                         </form>
-                        <form method="POST" action="{{ url_for('transactions.complete', id=transaction.id) }}" class="inline">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="px-4 py-2 rounded-lg bg-success text-white shadow-md hover:bg-emerald-600"
-                                    onclick="return confirm('確認交易已完成？')">確認完成</button>
-                        </form>
                         <button type="button" class="px-4 py-2 rounded-lg border border-orange-500 text-orange-600 hover:bg-orange-50"
                                 onclick="showDisputeModal()">提出爭議</button>
                         <form method="POST" action="{{ url_for('transactions.cancel', id=transaction.id) }}" class="inline">
@@ -209,11 +197,9 @@
                                     onclick="return confirm('確定要取消這筆交易嗎？')">取消交易</button>
                         </form>
                     {% elif transaction.status == 'in_progress' %}
-                        <form method="POST" action="{{ url_for('transactions.complete', id=transaction.id) }}" class="inline">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="px-4 py-2 rounded-lg bg-success text-white shadow-md hover:bg-emerald-600"
-                                    onclick="return confirm('確認交易已完成？')">確認完成</button>
-                        </form>
+                        <div class="px-4 py-2 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+                            等待買家確認完成
+                        </div>
                         <button type="button" class="px-4 py-2 rounded-lg border border-orange-500 text-orange-600 hover:bg-orange-50"
                                 onclick="showDisputeModal()">提出爭議</button>
                         <form method="POST" action="{{ url_for('transactions.cancel', id=transaction.id) }}" class="inline">

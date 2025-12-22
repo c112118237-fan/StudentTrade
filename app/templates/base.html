@@ -106,6 +106,21 @@
             }
         });
 
+        // Handle notification count updates
+        socket.on('update_notification_count', function (data) {
+            console.log('Notification count update:', data.count);
+
+            const badge = document.getElementById('notification-badge');
+            if (badge) {
+                if (data.count > 0) {
+                    badge.textContent = data.count <= 9 ? data.count : '9+';
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        });
+
         // Handle new message notifications (when user is not in chat page)
         socket.on('new_message_notification', function (data) {
             console.log('New message notification:', data);
@@ -122,6 +137,20 @@
             // audio.play();
         });
 
+        // Handle generic notifications (transactions, reviews, etc.)
+        socket.on('new_notification', function (data) {
+            console.log('New notification:', data);
+
+            if (data && ['new_message', 'transaction_request', 'transaction_in_progress'].includes(data.type)) {
+                return;
+            }
+
+            if (typeof Toast !== 'undefined' && Toast.info) {
+                const message = data && data.content ? data.content : '你有新的通知';
+                Toast.info(message, 5000);
+            }
+        });
+
         // Handle new transaction notifications
         socket.on('new_transaction_notification', function (data) {
             console.log('New transaction notification:', data);
@@ -131,6 +160,18 @@
                 const title = data.product_title || '您的商品';
                 const message = `${buyer} 發起交易：${title}`;
                 Toast.warning(message, 5000);
+            }
+        });
+
+        // Handle transaction in progress notifications
+        socket.on('transaction_in_progress_notification', function (data) {
+            console.log('Transaction in progress notification:', data);
+
+            if (typeof Toast !== 'undefined' && Toast.info) {
+                const seller = data.seller_username || '賣家';
+                const title = data.product_title || '交易';
+                const message = `${seller} 已開始交易：${title}`;
+                Toast.info(message, 5000);
             }
         });
         }) ();

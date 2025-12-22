@@ -255,13 +255,12 @@ class MessageService:
             link: 連結
         """
         try:
-            notification = Notification(
+            from app.services.notification_service import NotificationService
+            NotificationService.create_notification(
                 user_id=user_id,
                 type=type,
                 content=content,
                 link=link
             )
-            db.session.add(notification)
-            db.session.commit()
         except Exception as e:
             db.session.rollback()

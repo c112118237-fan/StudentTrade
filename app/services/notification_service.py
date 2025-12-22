@@ -1,4 +1,4 @@
-from app.extensions import db
+from app.extensions import db, socketio
 from app.models.notification import Notification
 from app.models.review import Review
 from app.models.transaction import Transaction
@@ -30,6 +30,26 @@ class NotificationService:
 
             db.session.add(notification)
             db.session.commit()
+
+            try:
+                unread_count = NotificationService.get_unread_count(user_id)
+                socketio.emit(
+                    'update_notification_count',
+                    {'count': unread_count},
+                    room=f'user_{user_id}'
+                )
+                socketio.emit(
+                    'new_notification',
+                    {
+                        'type': type,
+                        'content': content,
+                        'link': link,
+                        'created_at': notification.created_at.strftime('%Y-%m-%d %H:%M')
+                    },
+                    room=f'user_{user_id}'
+                )
+            except Exception:
+                pass
 
             return True, notification
 
