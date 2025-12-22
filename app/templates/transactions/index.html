@@ -67,15 +67,21 @@
                     {% elif tx.status == 'accepted' %}
                     <span
                         class="px-3 py-1 rounded bg-blue-100 text-primary border border-primary/60 text-sm font-semibold">已接受</span>
+                    {% elif tx.status == 'in_progress' %}
+                    <span
+                        class="px-3 py-1 rounded bg-purple-100 text-purple-600 border border-purple-300 text-sm font-semibold">進行中</span>
                     {% elif tx.status == 'completed' %}
                     <span
                         class="px-3 py-1 rounded bg-green-100 text-success border border-success/60 text-sm font-semibold">已完成</span>
                     {% elif tx.status == 'cancelled' %}
                     <span
-                        class="px-3 py-1 rounded bg-red-100 text-danger border border-danger/60 text-sm font-semibold">已取消</span>
+                        class="px-3 py-1 rounded bg-gray-100 text-gray-600 border border-gray-300 text-sm font-semibold">已取消</span>
                     {% elif tx.status == 'rejected' %}
                     <span
                         class="px-3 py-1 rounded bg-red-100 text-danger border border-danger/60 text-sm font-semibold">已拒絕</span>
+                    {% elif tx.status == 'disputed' %}
+                    <span
+                        class="px-3 py-1 rounded bg-orange-100 text-orange-600 border border-orange-300 text-sm font-semibold">爭議中</span>
                     {% else %}
                     <span
                         class="px-3 py-1 rounded bg-gray-100 text-secondary border border-secondary/60 text-sm font-semibold">{{
@@ -83,9 +89,9 @@
                     {% endif %}
                 </div>
                 <div class="flex gap-4">
-                    {% if tx.product and tx.product.images %}
-                    <img src="{{ url_for('static', filename='uploads/' + tx.product.images[0].image_url) }}"
-                        alt="{{ tx.product.title }}" class="w-16 h-16 rounded-lg object-cover flex-shrink-0">
+                    {% if tx.product %}
+                    <img src="{{ tx.product.primary_image }}" alt="{{ tx.product.title }}"
+                        class="w-16 h-16 rounded-lg object-cover flex-shrink-0">
                     {% else %}
                     <div class="w-16 h-16 rounded-lg bg-secondaryLight flex-shrink-0"></div>
                     {% endif %}

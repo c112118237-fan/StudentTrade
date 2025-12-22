@@ -51,7 +51,8 @@ def get_transaction_status_label(status):
         'rejected': '已拒絕',
         'in_progress': '進行中',
         'completed': '已完成',
-        'cancelled': '已取消'
+        'cancelled': '已取消',
+        'disputed': '爭議中'
     }
     return statuses.get(status, status)
 

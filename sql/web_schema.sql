@@ -72,11 +72,22 @@ CREATE TABLE IF NOT EXISTS transactions (
     buyer_id         INTEGER NOT NULL REFERENCES users(id),
     seller_id        INTEGER NOT NULL REFERENCES users(id),
     status           VARCHAR(20) NOT NULL DEFAULT 'pending',
+    -- 狀態說明：
+    -- pending: 待賣家回應
+    -- accepted: 賣家已接受
+    -- in_progress: 交易進行中
+    -- completed: 已完成
+    -- cancelled: 已取消
+    -- rejected: 已拒絕
+    -- disputed: 爭議中
     amount           NUMERIC(10, 2) NOT NULL,
     transaction_type VARCHAR(20) NOT NULL,
+    -- 交易類型：sale (買賣), exchange (交換), free (免費贈送)
     notes            TEXT,
     created_at       TIMESTAMP NOT NULL DEFAULT NOW(),
-    completed_at     TIMESTAMP
+    completed_at     TIMESTAMP,
+    CONSTRAINT chk_transaction_status CHECK (status IN ('pending', 'accepted', 'in_progress', 'completed', 'cancelled', 'rejected', 'disputed')),
+    CONSTRAINT chk_transaction_type CHECK (transaction_type IN ('sale', 'exchange', 'free'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_transactions_product ON transactions (product_id);

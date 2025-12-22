@@ -111,8 +111,23 @@
 
                 {# 發起交易按鈕 #}
                 {% if current_user.is_authenticated %}
-                <button
-                    class="flex items-center gap-2 px-5 py-3 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover">發起交易</button>
+                {% if main_product.status == 'active' %}
+                <button onclick="showTransactionModal()"
+                    class="flex items-center gap-2 px-5 py-3 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    發起交易
+                </button>
+                {% else %}
+                <button disabled
+                    class="flex items-center gap-2 px-5 py-3 rounded-lg bg-gray-300 text-gray-500 cursor-not-allowed">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                    {{ '交易中' if main_product.status == 'pending' else '已售出' if main_product.status == 'sold' else '無法交易' }}
+                </button>
+                {% endif %}
                 {% else %}
                 <a href="{{ url_for('auth.login', next=request.path) }}"
                     class="flex items-center gap-2 px-5 py-3 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover">發起交易</a>
@@ -159,4 +174,175 @@
     </div>
     {% endif %}
 </section>
+
+<!-- 發起交易模態框 -->
+{% if current_user.is_authenticated and current_user.id != main_product.user_id and main_product.status == 'active' %}
+<div id="transactionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-secondaryDark">發起交易</h3>
+            <button onclick="hideTransactionModal()" class="text-secondary hover:text-secondaryDark">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- 商品資訊摘要 -->
+        <div class="bg-secondaryLight rounded-lg p-4 mb-4">
+            <div class="flex gap-3">
+                <img src="{{ main_product.primary_image }}" alt="{{ main_product.title }}"
+                     class="w-20 h-20 rounded-lg object-cover">
+                <div class="flex-1">
+                    <p class="font-medium text-secondaryDark">{{ main_product.title }}</p>
+                    <p class="text-sm text-secondary">賣家：{{ main_product.seller.username }}</p>
+                    <p class="text-lg font-bold text-primary">NT$ {{ "%.2f"|format(main_product.price) }}</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('transactions.create') }}" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="product_id" value="{{ main_product.id }}">
+
+            <!-- 交易類型 -->
+            <div>
+                <label class="block text-sm font-medium text-secondaryDark mb-2">
+                    交易類型 <span class="text-danger">*</span>
+                </label>
+                <div class="space-y-2">
+                    <label class="flex items-center p-3 border border-secondaryLight rounded-lg cursor-pointer hover:border-primary hover:bg-blue-50 has-[:checked]:border-primary has-[:checked]:bg-blue-50">
+                        <input type="radio" name="transaction_type" value="sale" checked class="mr-3 accent-primary">
+                        <div class="flex-1">
+                            <span class="font-medium text-secondaryDark">購買</span>
+                            <p class="text-xs text-secondary">以金錢購買此商品</p>
+                        </div>
+                    </label>
+                    <label class="flex items-center p-3 border border-secondaryLight rounded-lg cursor-pointer hover:border-primary hover:bg-blue-50 has-[:checked]:border-primary has-[:checked]:bg-blue-50">
+                        <input type="radio" name="transaction_type" value="exchange" class="mr-3 accent-primary">
+                        <div class="flex-1">
+                            <span class="font-medium text-secondaryDark">交換</span>
+                            <p class="text-xs text-secondary">以物易物方式交易</p>
+                        </div>
+                    </label>
+                    <label class="flex items-center p-3 border border-secondaryLight rounded-lg cursor-pointer hover:border-primary hover:bg-blue-50 has-[:checked]:border-primary has-[:checked]:bg-blue-50">
+                        <input type="radio" name="transaction_type" value="free" class="mr-3 accent-primary">
+                        <div class="flex-1">
+                            <span class="font-medium text-secondaryDark">免費索取</span>
+                            <p class="text-xs text-secondary">賣家免費贈送</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 交易金額 -->
+            <div id="amountField">
+                <label class="block text-sm font-medium text-secondaryDark mb-2">
+                    交易金額 <span class="text-danger">*</span>
+                </label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary">NT$</span>
+                    <input type="number" name="amount" id="amount" value="{{ main_product.price }}" min="0" step="0.01" required
+                           class="w-full pl-12 pr-3 py-2 border border-secondaryLight rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <p class="text-xs text-secondary mt-1">建議價格：NT$ {{ "%.2f"|format(main_product.price) }}</p>
+            </div>
+
+            <!-- 備註 -->
+            <div>
+                <label class="block text-sm font-medium text-secondaryDark mb-2">
+                    備註 (選填)
+                </label>
+                <textarea name="notes" rows="3"
+                          class="w-full px-3 py-2 border border-secondaryLight rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="例如：希望面交地點、交易時間等..."></textarea>
+            </div>
+
+            <!-- 提示訊息 -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div class="flex gap-2">
+                    <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div class="text-sm text-blue-800">
+                        <p class="font-medium mb-1">交易流程說明：</p>
+                        <ol class="list-decimal list-inside space-y-1 text-xs">
+                            <li>提交交易請求給賣家</li>
+                            <li>等待賣家回應(接受/拒絕)</li>
+                            <li>賣家接受後開始進行交易</li>
+                            <li>完成交易並互相評價</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 按鈕 -->
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="hideTransactionModal()"
+                        class="flex-1 px-4 py-2 rounded-lg border border-secondaryLight text-secondary hover:bg-secondaryLight">
+                    取消
+                </button>
+                <button type="submit"
+                        class="flex-1 px-4 py-2 rounded-lg bg-primary text-white hover:bg-primaryHover">
+                    送出請求
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showTransactionModal() {
+    document.getElementById('transactionModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideTransactionModal() {
+    document.getElementById('transactionModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// 監聽交易類型變更,動態顯示/隱藏金額欄位
+document.addEventListener('DOMContentLoaded', function() {
+    const transactionTypeInputs = document.querySelectorAll('input[name="transaction_type"]');
+    const amountField = document.getElementById('amountField');
+    const amountInput = document.getElementById('amount');
+
+    transactionTypeInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            if (this.value === 'free') {
+                // 免費索取時隱藏金額欄位並設為 0
+                amountField.style.display = 'none';
+                amountInput.value = '0';
+                amountInput.required = false;
+            } else if (this.value === 'exchange') {
+                // 交換時顯示金額欄位但設為 0(代表無金錢交易)
+                amountField.style.display = 'block';
+                amountInput.value = '0';
+                amountInput.required = false;
+            } else {
+                // 購買時顯示金額欄位並設為商品價格
+                amountField.style.display = 'block';
+                amountInput.value = '{{ main_product.price }}';
+                amountInput.required = true;
+            }
+        });
+    });
+});
+
+// 點擊背景關閉模態框
+document.getElementById('transactionModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideTransactionModal();
+    }
+});
+
+// ESC 鍵關閉模態框
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !document.getElementById('transactionModal').classList.contains('hidden')) {
+        hideTransactionModal();
+    }
+});
+</script>
+{% endif %}
 {% endblock %}

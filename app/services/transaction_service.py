@@ -33,7 +33,7 @@ class TransactionService:
                 return False, '此商品目前無法交易'
 
             # 檢查買家不能是賣家
-            if product.seller_id == buyer_id:
+            if product.user_id == buyer_id:
                 return False, '無法購買自己的商品'
 
             # 檢查是否已有進行中的交易
@@ -49,7 +49,7 @@ class TransactionService:
             transaction = Transaction(
                 product_id=product_id,
                 buyer_id=buyer_id,
-                seller_id=product.seller_id,
+                seller_id=product.user_id,
                 transaction_type=transaction_type,
                 amount=amount,
                 status='pending',
@@ -64,7 +64,7 @@ class TransactionService:
 
             # 建立通知給賣家
             TransactionService._create_notification(
-                user_id=product.seller_id,
+                user_id=product.user_id,
                 type='transaction_request',
                 content=f'您的商品「{product.title}」收到新的交易請求',
                 link=f'/transactions/{transaction.id}'
@@ -98,11 +98,11 @@ class TransactionService:
                 return False, '您沒有權限操作此交易'
 
             # 檢查交易狀態
-            if transaction.status != 'pending':
+            if not transaction.can_accept():
                 return False, '此交易無法接受'
 
-            # 更新交易狀態
-            transaction.status = 'accepted'
+            # 更新交易狀態為已接受
+            transaction.status = Transaction.STATUS_ACCEPTED
 
             db.session.commit()
 
@@ -143,11 +143,11 @@ class TransactionService:
                 return False, '您沒有權限操作此交易'
 
             # 檢查交易狀態
-            if transaction.status != 'pending':
+            if not transaction.can_reject():
                 return False, '此交易無法拒絕'
 
             # 更新交易狀態
-            transaction.status = 'rejected'
+            transaction.status = Transaction.STATUS_REJECTED
             if reason:
                 transaction.notes = f"拒絕原因：{reason}"
 
@@ -192,11 +192,11 @@ class TransactionService:
                 return False, '您沒有權限操作此交易'
 
             # 檢查交易狀態
-            if transaction.status not in ['accepted', 'in_progress']:
+            if not transaction.can_complete():
                 return False, '此交易無法完成'
 
             # 更新交易狀態
-            transaction.status = 'completed'
+            transaction.status = Transaction.STATUS_COMPLETED
             transaction.completed_at = datetime.utcnow()
 
             # 更新商品狀態為已售出
@@ -241,12 +241,12 @@ class TransactionService:
             if transaction.buyer_id != user_id and transaction.seller_id != user_id:
                 return False, '您沒有權限操作此交易'
 
-            # 檢查交易狀態（已完成的不能取消）
-            if transaction.status in ['completed', 'cancelled']:
+            # 檢查交易狀態
+            if not transaction.can_cancel():
                 return False, '此交易無法取消'
 
             # 更新交易狀態
-            transaction.status = 'cancelled'
+            transaction.status = Transaction.STATUS_CANCELLED
             if reason:
                 current_notes = transaction.notes or ''
                 transaction.notes = f"{current_notes}\n取消原因：{reason}" if current_notes else f"取消原因：{reason}"
@@ -317,6 +317,157 @@ class TransactionService:
         query = query.order_by(Transaction.created_at.desc())
 
         return query.paginate(page=page, per_page=per_page, error_out=False)
+
+    @staticmethod
+    def start_progress(transaction_id, user_id):
+        """開始進行交易
+
+        Args:
+            transaction_id: 交易 ID
+            user_id: 操作者 ID（買家或賣家）
+
+        Returns:
+            (success: bool, message: str)
+        """
+        try:
+            transaction = Transaction.query.get(transaction_id)
+
+            if not transaction:
+                return False, '交易不存在'
+
+            # 驗證權限
+            if transaction.buyer_id != user_id and transaction.seller_id != user_id:
+                return False, '您沒有權限操作此交易'
+
+            # 檢查交易狀態
+            if not transaction.can_start_progress():
+                return False, '此交易無法開始進行'
+
+            # 更新交易狀態
+            transaction.status = Transaction.STATUS_IN_PROGRESS
+
+            db.session.commit()
+
+            # 建立通知給對方
+            other_user_id = transaction.seller_id if user_id == transaction.buyer_id else transaction.buyer_id
+            TransactionService._create_notification(
+                user_id=other_user_id,
+                type='transaction_in_progress',
+                content=f'交易「{transaction.product.title}」已開始進行',
+                link=f'/transactions/{transaction.id}'
+            )
+
+            return True, '交易已開始進行'
+
+        except Exception as e:
+            db.session.rollback()
+            return False, f'開始交易失敗：{str(e)}'
+
+    @staticmethod
+    def create_dispute(transaction_id, user_id, reason):
+        """提出交易爭議
+
+        Args:
+            transaction_id: 交易 ID
+            user_id: 操作者 ID（買家或賣家）
+            reason: 爭議原因
+
+        Returns:
+            (success: bool, message: str)
+        """
+        try:
+            transaction = Transaction.query.get(transaction_id)
+
+            if not transaction:
+                return False, '交易不存在'
+
+            # 驗證權限
+            if transaction.buyer_id != user_id and transaction.seller_id != user_id:
+                return False, '您沒有權限操作此交易'
+
+            # 檢查交易狀態
+            if not transaction.can_dispute():
+                return False, '此交易無法提出爭議'
+
+            # 更新交易狀態
+            transaction.status = Transaction.STATUS_DISPUTED
+            current_notes = transaction.notes or ''
+            transaction.notes = f"{current_notes}\n爭議原因：{reason}" if current_notes else f"爭議原因：{reason}"
+
+            db.session.commit()
+
+            # 建立通知給對方
+            other_user_id = transaction.seller_id if user_id == transaction.buyer_id else transaction.buyer_id
+            TransactionService._create_notification(
+                user_id=other_user_id,
+                type='transaction_disputed',
+                content=f'交易「{transaction.product.title}」有爭議待處理',
+                link=f'/transactions/{transaction.id}'
+            )
+
+            return True, '爭議已提交，將由管理員處理'
+
+        except Exception as e:
+            db.session.rollback()
+            return False, f'提交爭議失敗：{str(e)}'
+
+    @staticmethod
+    def resolve_dispute(transaction_id, admin_id, resolution, action='cancel'):
+        """解決交易爭議（管理員功能）
+
+        Args:
+            transaction_id: 交易 ID
+            admin_id: 管理員 ID
+            resolution: 解決方案說明
+            action: 處理動作 (cancel, complete, refund)
+
+        Returns:
+            (success: bool, message: str)
+        """
+        try:
+            transaction = Transaction.query.get(transaction_id)
+
+            if not transaction:
+                return False, '交易不存在'
+
+            # 檢查交易狀態
+            if transaction.status != Transaction.STATUS_DISPUTED:
+                return False, '此交易不在爭議狀態'
+
+            # 根據處理動作更新狀態
+            if action == 'cancel':
+                transaction.status = Transaction.STATUS_CANCELLED
+                transaction.product.status = 'active'
+            elif action == 'complete':
+                transaction.status = Transaction.STATUS_COMPLETED
+                transaction.completed_at = datetime.utcnow()
+                transaction.product.status = 'sold'
+
+            # 記錄解決方案
+            current_notes = transaction.notes or ''
+            transaction.notes = f"{current_notes}\n管理員處理：{resolution}"
+
+            db.session.commit()
+
+            # 通知雙方
+            TransactionService._create_notification(
+                user_id=transaction.buyer_id,
+                type='dispute_resolved',
+                content=f'交易「{transaction.product.title}」的爭議已處理',
+                link=f'/transactions/{transaction.id}'
+            )
+            TransactionService._create_notification(
+                user_id=transaction.seller_id,
+                type='dispute_resolved',
+                content=f'交易「{transaction.product.title}」的爭議已處理',
+                link=f'/transactions/{transaction.id}'
+            )
+
+            return True, '爭議已處理完成'
+
+        except Exception as e:
+            db.session.rollback()
+            return False, f'處理爭議失敗：{str(e)}'
 
     @staticmethod
     def _create_notification(user_id, type, content, link):

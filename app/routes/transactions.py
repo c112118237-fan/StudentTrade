@@ -134,3 +134,39 @@ def cancel(id):
         flash(message, 'error')
 
     return redirect(url_for('transactions.detail', id=id))
+
+@bp.route('/<int:id>/start-progress', methods=['POST'])
+@login_required
+def start_progress(id):
+    """開始進行交易"""
+    success, message = TransactionService.start_progress(id, current_user.id)
+
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'error')
+
+    return redirect(url_for('transactions.detail', id=id))
+
+@bp.route('/<int:id>/dispute', methods=['POST'])
+@login_required
+def dispute(id):
+    """提出交易爭議"""
+    reason = request.form.get('reason', '').strip()
+
+    if not reason:
+        flash('請說明爭議原因', 'error')
+        return redirect(url_for('transactions.detail', id=id))
+
+    success, message = TransactionService.create_dispute(
+        transaction_id=id,
+        user_id=current_user.id,
+        reason=reason
+    )
+
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'error')
+
+    return redirect(url_for('transactions.detail', id=id))

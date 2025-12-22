@@ -2,83 +2,315 @@
 {% block title %}交易詳情 - StudentTrade{% endblock %}
 
 {% block content %}
-{% set tx = transaction|default({
-    'id': 123,
-    'status': '等待賣家回應',
-    'status_class': 'warning',
-    'type': '購買',
-    'amount': '25,000',
-    'created_at': '2024-11-29 10:30',
-    'product': {'title': 'MacBook Pro 2020 13吋', 'category': '電子產品', 'condition': '良好', 'url': '/products/1'},
-    'seller': {'name': '王小明', 'rating': '4.8'},
-    'note': '可以面交嗎？地點在台北？'
-}, true) %}
-
 <section class="py-10">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div class="text-sm text-secondary flex items-center gap-2">
-            <a class="hover:text-primary" href="/transactions">我的交易</a> › <span class="text-secondaryDark">交易 #{{ tx.id }}</span>
+            <a class="hover:text-primary" href="{{ url_for('transactions.index') }}">我的交易</a> › <span class="text-secondaryDark">交易 #{{ transaction.id }}</span>
         </div>
 
         <div class="bg-white rounded-xl shadow-card p-6 space-y-6">
+            <!-- 交易狀態 -->
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="text-lg font-semibold text-secondaryDark">交易狀態：{{ tx.status }}</div>
-                {% set badge_color = 'bg-yellow-100 text-warning border border-warning/60' %}
-                {% if tx.status_class == 'success' %}{% set badge_color = 'bg-green-100 text-success border border-success/60' %}{% endif %}
-                {% if tx.status_class == 'danger' %}{% set badge_color = 'bg-red-100 text-danger border border-danger/60' %}{% endif %}
-                <span class="px-3 py-1 rounded {{ badge_color }} text-sm font-semibold">{{ tx.status }}</span>
+                <div class="text-lg font-semibold text-secondaryDark">交易狀態</div>
+                {% if transaction.status == 'pending' %}
+                <span class="px-3 py-1 rounded bg-yellow-100 text-warning border border-warning/60 text-sm font-semibold">待回應</span>
+                {% elif transaction.status == 'accepted' %}
+                <span class="px-3 py-1 rounded bg-blue-100 text-primary border border-primary/60 text-sm font-semibold">已接受</span>
+                {% elif transaction.status == 'in_progress' %}
+                <span class="px-3 py-1 rounded bg-purple-100 text-purple-600 border border-purple-300 text-sm font-semibold">進行中</span>
+                {% elif transaction.status == 'completed' %}
+                <span class="px-3 py-1 rounded bg-green-100 text-success border border-success/60 text-sm font-semibold">已完成</span>
+                {% elif transaction.status == 'cancelled' %}
+                <span class="px-3 py-1 rounded bg-gray-100 text-gray-600 border border-gray-300 text-sm font-semibold">已取消</span>
+                {% elif transaction.status == 'rejected' %}
+                <span class="px-3 py-1 rounded bg-red-100 text-danger border border-danger/60 text-sm font-semibold">已拒絕</span>
+                {% elif transaction.status == 'disputed' %}
+                <span class="px-3 py-1 rounded bg-orange-100 text-orange-600 border border-orange-300 text-sm font-semibold">爭議中</span>
+                {% else %}
+                <span class="px-3 py-1 rounded bg-gray-100 text-secondary border border-secondary/60 text-sm font-semibold">{{ transaction.status }}</span>
+                {% endif %}
             </div>
 
+            <!-- 交易基本資訊 -->
             <div class="border-t border-secondaryLight pt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-secondary">
-                <div>交易編號：<span class="font-medium text-secondaryDark">#{{ tx.id }}</span></div>
-                <div>發起時間：<span class="font-medium text-secondaryDark">{{ tx.created_at }}</span></div>
-                <div>交易類型：<span class="font-medium text-secondaryDark">{{ tx.type }}</span></div>
-                <div>交易金額：<span class="font-medium text-secondaryDark">NT$ {{ tx.amount }}</span></div>
+                <div>交易編號：<span class="font-medium text-secondaryDark">#{{ transaction.id }}</span></div>
+                <div>發起時間：<span class="font-medium text-secondaryDark">{{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}</span></div>
+                <div>交易類型：<span class="font-medium text-secondaryDark">{{ get_transaction_type_label(transaction.transaction_type) }}</span></div>
+                <div>交易金額：<span class="font-medium text-secondaryDark">{{ format_price(transaction.amount) }}</span></div>
+                {% if transaction.completed_at %}
+                <div>完成時間：<span class="font-medium text-secondaryDark">{{ transaction.completed_at.strftime('%Y-%m-%d %H:%M') }}</span></div>
+                {% endif %}
             </div>
 
+            <!-- 商品資訊 -->
             <div class="border-t border-secondaryLight pt-4">
                 <h2 class="font-semibold text-secondaryDark mb-3">商品資訊</h2>
+                {% if transaction.product %}
                 <div class="flex gap-4 items-center">
-                    <div class="w-16 h-16 bg-secondaryLight rounded-lg flex-shrink-0"></div>
+                    {% if transaction.product.images.first() %}
+                    <img src="{{ url_for('static', filename='uploads/' + transaction.product.images.first().image_url) }}"
+                         alt="{{ transaction.product.title }}"
+                         class="w-20 h-20 rounded-lg object-cover flex-shrink-0">
+                    {% else %}
+                    <div class="w-20 h-20 bg-secondaryLight rounded-lg flex-shrink-0 flex items-center justify-center">
+                        <svg class="w-8 h-8 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    {% endif %}
                     <div class="space-y-1">
-                        <p class="text-secondaryDark font-medium">{{ tx.product.title }}</p>
-                        <p class="text-secondary text-sm">分類：{{ tx.product.category }} | 狀況：{{ tx.product.condition }}</p>
-                        <a class="text-primary text-sm hover:text-primaryHover" href="{{ tx.product.url }}">查看商品詳情</a>
+                        <p class="text-secondaryDark font-medium">{{ transaction.product.title }}</p>
+                        <p class="text-secondary text-sm">
+                            分類：{{ transaction.product.category.name if transaction.product.category else '未分類' }} |
+                            狀況：{{ get_product_condition_label(transaction.product.condition) }}
+                        </p>
+                        <a class="text-primary text-sm hover:text-primaryHover" href="{{ url_for('products.detail', id=transaction.product_id) }}">查看商品詳情 →</a>
                     </div>
                 </div>
+                {% else %}
+                <p class="text-secondary">商品已被刪除</p>
+                {% endif %}
             </div>
 
+            <!-- 交易對象資訊 -->
             <div class="border-t border-secondaryLight pt-4">
+                {% if transaction.buyer_id == current_user.id %}
+                <!-- 當前用戶是買家,顯示賣家資訊 -->
                 <h2 class="font-semibold text-secondaryDark mb-3">賣家資訊</h2>
+                {% set other_user = transaction.product.seller if transaction.product else None %}
+                {% else %}
+                <!-- 當前用戶是賣家,顯示買家資訊 -->
+                <h2 class="font-semibold text-secondaryDark mb-3">買家資訊</h2>
+                {% set other_user = transaction.buyer %}
+                {% endif %}
+
+                {% if other_user %}
                 <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-primaryLight flex items-center justify-center text-lg">用戶</div>
+                    {% if other_user.avatar_url %}
+                    <img src="{{ url_for('static', filename='uploads/' + other_user.avatar_url) }}"
+                         alt="{{ other_user.username }}"
+                         class="w-12 h-12 rounded-full object-cover">
+                    {% else %}
+                    <div class="w-12 h-12 rounded-full bg-primaryLight flex items-center justify-center text-lg font-semibold text-primary">
+                        {{ other_user.username[0].upper() }}
+                    </div>
+                    {% endif %}
                     <div>
-                        <p class="font-medium text-secondaryDark">{{ tx.seller.name }}</p>
-                        <p class="text-secondary text-sm">評分：{{ tx.seller.rating }}</p>
-                        <a class="text-primary text-sm hover:text-primaryHover" href="/messages/{{ tx.seller.name }}">發送訊息</a>
+                        <p class="font-medium text-secondaryDark">{{ other_user.username }}</p>
+                        {% if other_user.department %}
+                        <p class="text-secondary text-sm">{{ other_user.department }}</p>
+                        {% endif %}
+                        <a class="text-primary text-sm hover:text-primaryHover" href="{{ url_for('messages.chat', user_id=other_user.id) }}">發送訊息 →</a>
                     </div>
                 </div>
+                {% else %}
+                <p class="text-secondary">用戶資訊不可用</p>
+                {% endif %}
             </div>
 
+            <!-- 備註 -->
+            {% if transaction.notes %}
             <div class="border-t border-secondaryLight pt-4 space-y-2">
                 <h2 class="font-semibold text-secondaryDark">備註</h2>
-                <p class="text-secondary">{{ tx.note }}</p>
+                <p class="text-secondary whitespace-pre-wrap">{{ transaction.notes }}</p>
             </div>
+            {% endif %}
 
+            <!-- 交易操作按鈕 -->
             <div class="border-t border-secondaryLight pt-4 flex flex-wrap gap-3">
-                <button class="px-4 py-2 rounded-lg border border-danger text-danger hover:bg-red-50">取消交易</button>
-                <button class="px-4 py-2 rounded-lg bg-success text-white shadow-md hover:bg-emerald-600">接受交易</button>
-                <button class="px-4 py-2 rounded-lg border border-warning text-warning hover:bg-yellow-50">拒絕交易</button>
+                {% if transaction.buyer_id == current_user.id %}
+                    <!-- 買家操作 -->
+                    {% if transaction.status == 'pending' %}
+                        <form method="POST" action="{{ url_for('transactions.cancel', id=transaction.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="px-4 py-2 rounded-lg border border-danger text-danger hover:bg-red-50"
+                                    onclick="return confirm('確定要取消這筆交易嗎？')">取消交易</button>
+                        </form>
+                    {% elif transaction.status == 'accepted' %}
+                        <form method="POST" action="{{ url_for('transactions.start_progress', id=transaction.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="px-4 py-2 rounded-lg bg-purple-600 text-white shadow-md hover:bg-purple-700"
+                                    onclick="return confirm('確定要開始進行交易嗎？')">開始交易</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('transactions.complete', id=transaction.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="px-4 py-2 rounded-lg bg-success text-white shadow-md hover:bg-emerald-600"
+                                    onclick="return confirm('確認交易已完成？')">確認完成</button>
+                        </form>
+                        <button type="button" class="px-4 py-2 rounded-lg border border-orange-500 text-orange-600 hover:bg-orange-50"
+                                onclick="showDisputeModal()">提出爭議</button>
+                        <form method="POST" action="{{ url_for('transactions.cancel', id=transaction.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="px-4 py-2 rounded-lg border border-danger text-danger hover:bg-red-50"
+                                    onclick="return confirm('確定要取消這筆交易嗎？')">取消交易</button>
+                        </form>
+                    {% elif transaction.status == 'in_progress' %}
+                        <form method="POST" action="{{ url_for('transactions.complete', id=transaction.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="px-4 py-2 rounded-lg bg-success text-white shadow-md hover:bg-emerald-600"
+                                    onclick="return confirm('確認交易已完成？')">確認完成</button>
+                        </form>
+                        <button type="button" class="px-4 py-2 rounded-lg border border-orange-500 text-orange-600 hover:bg-orange-50"
+                                onclick="showDisputeModal()">提出爭議</button>
+                        <form method="POST" action="{{ url_for('transactions.cancel', id=transaction.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="px-4 py-2 rounded-lg border border-danger text-danger hover:bg-red-50"
+                                    onclick="return confirm('確定要取消這筆交易嗎？')">取消交易</button>
+                        </form>
+                    {% elif transaction.status == 'disputed' %}
+                        <div class="px-4 py-2 rounded-lg bg-orange-50 text-orange-700 border border-orange-200">
+                            爭議處理中，請等待管理員處理
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <!-- 賣家操作 -->
+                    {% if transaction.status == 'pending' %}
+                        <form method="POST" action="{{ url_for('transactions.accept', id=transaction.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="px-4 py-2 rounded-lg bg-success text-white shadow-md hover:bg-emerald-600"
+                                    onclick="return confirm('確定要接受這筆交易嗎？')">接受交易</button>
+                        </form>
+                        <button type="button" class="px-4 py-2 rounded-lg border border-warning text-warning hover:bg-yellow-50"
+                                onclick="showRejectModal()">拒絕交易</button>
+                    {% elif transaction.status == 'accepted' %}
+                        <form method="POST" action="{{ url_for('transactions.start_progress', id=transaction.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="px-4 py-2 rounded-lg bg-purple-600 text-white shadow-md hover:bg-purple-700"
+                                    onclick="return confirm('確定要開始進行交易嗎？')">開始交易</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('transactions.complete', id=transaction.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="px-4 py-2 rounded-lg bg-success text-white shadow-md hover:bg-emerald-600"
+                                    onclick="return confirm('確認交易已完成？')">確認完成</button>
+                        </form>
+                        <button type="button" class="px-4 py-2 rounded-lg border border-orange-500 text-orange-600 hover:bg-orange-50"
+                                onclick="showDisputeModal()">提出爭議</button>
+                        <form method="POST" action="{{ url_for('transactions.cancel', id=transaction.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="px-4 py-2 rounded-lg border border-danger text-danger hover:bg-red-50"
+                                    onclick="return confirm('確定要取消這筆交易嗎？')">取消交易</button>
+                        </form>
+                    {% elif transaction.status == 'in_progress' %}
+                        <form method="POST" action="{{ url_for('transactions.complete', id=transaction.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="px-4 py-2 rounded-lg bg-success text-white shadow-md hover:bg-emerald-600"
+                                    onclick="return confirm('確認交易已完成？')">確認完成</button>
+                        </form>
+                        <button type="button" class="px-4 py-2 rounded-lg border border-orange-500 text-orange-600 hover:bg-orange-50"
+                                onclick="showDisputeModal()">提出爭議</button>
+                        <form method="POST" action="{{ url_for('transactions.cancel', id=transaction.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="px-4 py-2 rounded-lg border border-danger text-danger hover:bg-red-50"
+                                    onclick="return confirm('確定要取消這筆交易嗎？')">取消交易</button>
+                        </form>
+                    {% elif transaction.status == 'disputed' %}
+                        <div class="px-4 py-2 rounded-lg bg-orange-50 text-orange-700 border border-orange-200">
+                            爭議處理中，請等待管理員處理
+                        </div>
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
 
+        <!-- 交易完成後的操作 -->
+        {% if transaction.status == 'completed' %}
         <div class="bg-white rounded-xl shadow-card p-6 space-y-3">
-            <h2 class="font-semibold text-secondaryDark">完成後</h2>
+            <h2 class="font-semibold text-secondaryDark">交易已完成</h2>
             <div class="flex flex-wrap gap-3">
-                <a class="px-4 py-2 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover" href="/reviews/new/{{ tx.id }}">對賣家進行評價</a>
-                <button class="px-4 py-2 rounded-lg border border-secondaryLight text-secondary hover:bg-secondaryLight">下載收據</button>
+                {% if transaction.buyer_id == current_user.id %}
+                    <!-- 買家可以評價賣家 -->
+                    {% set existing_review = transaction.reviews.filter_by(reviewer_id=current_user.id).first() %}
+                    {% if not existing_review %}
+                    <a class="px-4 py-2 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover"
+                       href="{{ url_for('reviews.new', transaction_id=transaction.id) }}">評價賣家</a>
+                    {% else %}
+                    <span class="px-4 py-2 rounded-lg bg-gray-100 text-secondary">已評價</span>
+                    {% endif %}
+                {% else %}
+                    <!-- 賣家可以評價買家 -->
+                    {% set existing_review = transaction.reviews.filter_by(reviewer_id=current_user.id).first() %}
+                    {% if not existing_review %}
+                    <a class="px-4 py-2 rounded-lg bg-primary text-white shadow-md hover:bg-primaryHover"
+                       href="{{ url_for('reviews.new', transaction_id=transaction.id) }}">評價買家</a>
+                    {% else %}
+                    <span class="px-4 py-2 rounded-lg bg-gray-100 text-secondary">已評價</span>
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
+        {% endif %}
     </div>
 </section>
+
+<!-- 拒絕交易模態框 -->
+<div id="rejectModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-semibold text-secondaryDark mb-4">拒絕交易</h3>
+        <form method="POST" action="{{ url_for('transactions.reject', id=transaction.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-secondaryDark mb-2">拒絕原因 (選填)</label>
+                <textarea name="reason" rows="3" class="w-full px-3 py-2 border border-secondaryLight rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" placeholder="請說明拒絕的原因..."></textarea>
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button type="button" onclick="hideRejectModal()" class="px-4 py-2 rounded-lg border border-secondaryLight text-secondary hover:bg-secondaryLight">取消</button>
+                <button type="submit" class="px-4 py-2 rounded-lg bg-danger text-white hover:bg-red-600">確認拒絕</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 提出爭議模態框 -->
+<div id="disputeModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-semibold text-secondaryDark mb-4">提出交易爭議</h3>
+        <form method="POST" action="{{ url_for('transactions.dispute', id=transaction.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-secondaryDark mb-2">爭議原因 <span class="text-danger">*</span></label>
+                <textarea name="reason" rows="4" required class="w-full px-3 py-2 border border-secondaryLight rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" placeholder="請詳細說明爭議原因，管理員將協助處理..."></textarea>
+            </div>
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <p class="text-sm text-yellow-800">
+                    <strong>注意：</strong>提出爭議後，交易將暫時凍結，由管理員介入處理。請確保您的爭議原因明確且合理。
+                </p>
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button type="button" onclick="hideDisputeModal()" class="px-4 py-2 rounded-lg border border-secondaryLight text-secondary hover:bg-secondaryLight">取消</button>
+                <button type="submit" class="px-4 py-2 rounded-lg bg-orange-600 text-white hover:bg-orange-700">提交爭議</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showRejectModal() {
+    document.getElementById('rejectModal').classList.remove('hidden');
+}
+
+function hideRejectModal() {
+    document.getElementById('rejectModal').classList.add('hidden');
+}
+
+function showDisputeModal() {
+    document.getElementById('disputeModal').classList.remove('hidden');
+}
+
+function hideDisputeModal() {
+    document.getElementById('disputeModal').classList.add('hidden');
+}
+
+// 點擊背景關閉模態框
+document.getElementById('rejectModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideRejectModal();
+    }
+});
+
+document.getElementById('disputeModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideDisputeModal();
+    }
+});
+</script>
 {% endblock %}
