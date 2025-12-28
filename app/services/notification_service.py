@@ -3,6 +3,7 @@ from app.models.notification import Notification
 from app.models.review import Review
 from app.models.transaction import Transaction
 from app.models.user import User
+from datetime import timedelta
 
 class NotificationService:
     """通知服務類別"""
@@ -33,6 +34,9 @@ class NotificationService:
 
             try:
                 unread_count = NotificationService.get_unread_count(user_id)
+                # Convert UTC to Taiwan time (UTC+8)
+                taiwan_time = notification.created_at + timedelta(hours=8)
+
                 socketio.emit(
                     'update_notification_count',
                     {'count': unread_count},
@@ -41,10 +45,12 @@ class NotificationService:
                 socketio.emit(
                     'new_notification',
                     {
+                        'id': notification.id,
                         'type': type,
                         'content': content,
                         'link': link,
-                        'created_at': notification.created_at.strftime('%Y-%m-%d %H:%M')
+                        'is_read': False,
+                        'created_at': taiwan_time.strftime('%Y-%m-%d %H:%M:%S')
                     },
                     room=f'user_{user_id}'
                 )

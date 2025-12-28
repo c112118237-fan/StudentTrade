@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import current_user
 from app.services.notification_service import NotificationService
 from app.utils.decorators import login_required
+from datetime import timedelta
 
 bp = Blueprint('notifications', __name__, url_prefix='/notifications')
 
@@ -92,7 +93,7 @@ def get_recent():
             'content': n.content,
             'link': n.link,
             'is_read': n.is_read,
-            'created_at': n.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            'created_at': (n.created_at + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M:%S')
         } for n in notifications],
         'unread_count': unread_count
     })

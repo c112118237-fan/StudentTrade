@@ -222,6 +222,13 @@ function notificationDropdown() {
             // Initialize WebSocket connection if available
             if (typeof io !== 'undefined') {
                 this.socket = io();
+
+                // Join user room when connected
+                this.socket.on('connect', () => {
+                    console.log('Notification dropdown: Connected to WebSocket');
+                    this.socket.emit('join_user_room');
+                });
+
                 this.setupSocketListeners();
             }
         },
@@ -233,24 +240,24 @@ function notificationDropdown() {
             this.socket.on('new_notification', (data) => {
                 console.log('New notification received:', data);
 
-                // Add new notification to the top of the list
-                this.notifications.unshift({
-                    id: Date.now(), // Temporary ID
-                    type: data.type,
-                    content: data.content,
-                    link: data.link,
-                    is_read: false,
-                    created_at: data.created_at
-                });
-
-                // Keep only the latest 10 notifications
-                if (this.notifications.length > 10) {
-                    this.notifications = this.notifications.slice(0, 10);
-                }
-
-                // Reload to get accurate data with proper IDs
+                // If dropdown is open, reload to show the new notification
                 if (this.open) {
                     this.loadNotifications();
+                } else {
+                    // If dropdown is closed, just add to local array for badge count
+                    this.notifications.unshift({
+                        id: Date.now(), // Temporary ID
+                        type: data.type,
+                        content: data.content,
+                        link: data.link,
+                        is_read: false,
+                        created_at: data.created_at
+                    });
+
+                    // Keep only the latest 10 notifications
+                    if (this.notifications.length > 10) {
+                        this.notifications = this.notifications.slice(0, 10);
+                    }
                 }
             });
 
