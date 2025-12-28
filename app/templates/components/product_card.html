@@ -29,10 +29,18 @@ font-family='Arial'%3EStudentTrade%3C/text%3E%3C/svg%3E" %}
         <div class="p-4 space-y-2">
             <h3 class="font-semibold text-secondaryDark text-lg leading-tight line-clamp-2">{{ p.title }}</h3>
             <p class="text-primary font-bold text-xl">NT$ {{ "%.2f"|format(p.price) }}</p>
-            <div class="flex justify-between text-sm text-secondary">
+            <div class="flex justify-between items-center text-sm text-secondary">
                 <span>狀況：{{ p.condition }}</span>
                 <span>{{ p.created_at.strftime('%m-%d') if p.created_at else '' }}</span>
             </div>
+            {% if p.seller %}
+            <div class="flex items-center gap-2 pt-1 border-t border-gray-100">
+                <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span class="text-sm text-secondary">賣家：{{ p.seller.username }}</span>
+            </div>
+            {% endif %}
         </div>
     </a>
 

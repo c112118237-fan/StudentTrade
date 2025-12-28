@@ -43,7 +43,8 @@ def index():
         sort_by = request.args.get('sort_by', 'created_at')
         order = request.args.get('order', 'desc')
 
-    # 取得商品列表
+    # 取得商品列表（排除當前使用者自己的商品）
+    exclude_user_id = current_user.id if current_user.is_authenticated else None
     pagination = ProductService.get_products(
         page=page,
         search=search,
@@ -52,7 +53,8 @@ def index():
         min_price=min_price,
         max_price=max_price,
         sort_by=sort_by,
-        order=order
+        order=order,
+        exclude_user_id=exclude_user_id
     )
 
     # 取得分類列表

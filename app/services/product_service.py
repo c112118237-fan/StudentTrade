@@ -12,7 +12,7 @@ class ProductService:
     @staticmethod
     def get_products(page=1, per_page=12, search=None, category_id=None,
                     condition=None, min_price=None, max_price=None,
-                    sort_by='created_at', order='desc', status='active'):
+                    sort_by='created_at', order='desc', status='active', exclude_user_id=None):
         """取得商品列表（分頁）
 
         Args:
@@ -26,6 +26,7 @@ class ProductService:
             sort_by: 排序欄位（created_at, price, view_count）
             order: 排序方向（asc, desc）
             status: 商品狀態
+            exclude_user_id: 排除特定使用者的商品
 
         Returns:
             Pagination 物件
@@ -35,6 +36,10 @@ class ProductService:
         # 篩選狀態
         if status:
             query = query.filter_by(status=status)
+
+        # 排除特定使用者的商品
+        if exclude_user_id:
+            query = query.filter(Product.user_id != exclude_user_id)
 
         # 搜尋關鍵字
         if search:
