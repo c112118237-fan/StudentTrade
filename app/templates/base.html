@@ -141,6 +141,14 @@
         socket.on('new_notification', function (data) {
             console.log('New notification:', data);
 
+            if (data && data.type && data.type.startsWith('transaction_') && data.link) {
+                const targetPath = data.link.split('?')[0];
+                if (window.location.pathname === targetPath) {
+                    window.location.reload();
+                    return;
+                }
+            }
+
             if (data && ['new_message', 'transaction_request', 'transaction_in_progress'].includes(data.type)) {
                 return;
             }

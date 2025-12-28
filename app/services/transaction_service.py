@@ -36,14 +36,15 @@ class TransactionService:
             if product.user_id == buyer_id:
                 return False, '無法購買自己的商品'
 
-            # 檢查是否已有進行中的交易
-            existing_transaction = Transaction.query.filter_by(
+            # 檢查是否已送出過此商品的交易請求
+            existing_request = Transaction.query.filter_by(
                 product_id=product_id,
-                status='pending'
+                buyer_id=buyer_id,
+                status=Transaction.STATUS_PENDING
             ).first()
 
-            if existing_transaction:
-                return False, '此商品已有進行中的交易'
+            if existing_request:
+                return False, '您已經送出此商品的交易請求'
 
             # 建立交易
             transaction = Transaction(
@@ -55,9 +56,6 @@ class TransactionService:
                 status='pending',
                 notes=notes
             )
-
-            # 更新商品狀態
-            product.status = 'pending'
 
             db.session.add(transaction)
             db.session.commit()
@@ -109,6 +107,19 @@ class TransactionService:
 
             # 更新交易狀態為已接受
             transaction.status = Transaction.STATUS_ACCEPTED
+            transaction.product.status = 'pending'
+
+            # 拒絕其他待處理的交易請求
+            other_pending = Transaction.query.filter(
+                Transaction.product_id == transaction.product_id,
+                Transaction.status == Transaction.STATUS_PENDING,
+                Transaction.id != transaction.id
+            ).all()
+            for other in other_pending:
+                other.status = Transaction.STATUS_REJECTED
+                reason = '賣家已接受其他交易'
+                current_notes = other.notes or ''
+                other.notes = f"{current_notes}\n拒絕原因：{reason}" if current_notes else f"拒絕原因：{reason}"
 
             db.session.commit()
 
@@ -119,6 +130,13 @@ class TransactionService:
                 content=f'您的交易請求「{transaction.product.title}」已被賣家接受',
                 link=f'/transactions/{transaction.id}'
             )
+            for other in other_pending:
+                TransactionService._create_notification(
+                    user_id=other.buyer_id,
+                    type='transaction_rejected',
+                    content=f'您的交易請求「{transaction.product.title}」已被賣家婉拒（已接受其他買家）',
+                    link=f'/transactions/{other.id}'
+                )
             TransactionService._emit_pending_transactions(user_id=transaction.seller_id)
 
             return True, transaction
