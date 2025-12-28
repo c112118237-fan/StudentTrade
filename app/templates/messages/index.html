@@ -9,26 +9,28 @@
         <div class="bg-white rounded-xl shadow-card overflow-hidden grid grid-cols-1 md:grid-cols-3">
             <aside class="border-r border-secondaryLight max-h-[70vh] overflow-y-auto chat-scroll">
                 <div class="p-4 font-semibold text-secondaryDark">對話列表</div>
-                <div class="space-y-2 p-4 pt-0">
+                <div class="space-y-2 p-4 pt-0" id="conversation-list">
                     {% if conversations %}
                     {% for conversation in conversations %}
                     <a href="{{ url_for('messages.chat', user_id=conversation.user.id) }}"
-                        class="block rounded-lg p-3 {{ 'bg-primaryLight' if conversation.unread_count > 0 else 'bg-white' }} border border-secondaryLight hover:border-primary transition">
+                        class="block rounded-lg p-3 {{ 'bg-primaryLight' if conversation.unread_count > 0 else 'bg-white' }} border border-secondaryLight hover:border-primary transition"
+                        data-user-id="{{ conversation.user.id }}">
                         <div class="flex justify-between items-center">
                             <div class="flex items-center gap-2">
                                 <span
-                                    class="w-2 h-2 rounded-full {{ 'bg-primary' if conversation.unread_count > 0 else 'bg-secondaryLight' }}"></span>
-                                <span class="font-medium text-secondaryDark">{{ conversation.user.username }} {% if
+                                    class="w-2 h-2 rounded-full {{ 'bg-primary' if conversation.unread_count > 0 else 'bg-secondaryLight' }}"
+                                    data-unread-indicator></span>
+                                <span class="font-medium text-secondaryDark" data-username>{{ conversation.user.username }} {% if
                                     conversation.unread_count > 0 %}({{ conversation.unread_count }}){% endif %}</span>
                             </div>
-                            <span class="text-xs text-secondary">{{ conversation.last_message.created_at.strftime('%m/%d
+                            <span class="text-xs text-secondary" data-time>{{ conversation.last_message.created_at.strftime('%m/%d
                                 %H:%M') }}</span>
                         </div>
-                        <p class="text-secondary text-sm mt-1 line-clamp-1">{{ conversation.last_message.content }}</p>
+                        <p class="text-secondary text-sm mt-1 line-clamp-1" data-last-message>{{ conversation.last_message.content }}</p>
                     </a>
                     {% endfor %}
                     {% else %}
-                    <div class="text-center py-8 text-secondary">
+                    <div class="text-center py-8 text-secondary" id="empty-state">
                         <p>尚無對話記錄</p>
                     </div>
                     {% endif %}
@@ -43,4 +45,127 @@
         </div>
     </div>
 </section>
+
+<script>
+(function() {
+    // Initialize Socket.IO
+    const socket = io();
+    const currentUserId = {{ current_user.id | tojson }};
+    const conversationList = document.getElementById('conversation-list');
+
+    // Connect to WebSocket
+    socket.on('connect', function() {
+        console.log('Connected to WebSocket');
+
+        // Join personal room for notifications
+        socket.emit('join_user_room');
+    });
+
+    // Listen for new message notifications
+    socket.on('new_message_notification', function(data) {
+        console.log('New message notification:', data);
+
+        // Update conversation list with unread count
+        updateConversationList(data.sender_id, data.sender_username, data.content, data.created_at, data);
+    });
+
+    // Update conversation list when new message received
+    function updateConversationList(senderId, senderUsername, content, time, data) {
+        if (!conversationList) return;
+
+        // Remove empty state if exists
+        const emptyState = document.getElementById('empty-state');
+        if (emptyState) {
+            emptyState.remove();
+        }
+
+        let conversationItem = conversationList.querySelector(`a[data-user-id="${senderId}"]`);
+
+        if (conversationItem) {
+            // Update existing conversation
+            const lastMessageEl = conversationItem.querySelector('[data-last-message]');
+            const timeEl = conversationItem.querySelector('[data-time]');
+            const indicator = conversationItem.querySelector('[data-unread-indicator]');
+            const usernameEl = conversationItem.querySelector('[data-username]');
+
+            if (lastMessageEl) lastMessageEl.textContent = content;
+            if (timeEl) {
+                const now = new Date();
+                timeEl.textContent = `${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${time}`;
+            }
+
+            // Update unread indicator
+            if (indicator) {
+                indicator.classList.remove('bg-secondaryLight');
+                indicator.classList.add('bg-primary');
+            }
+
+            // Update background color
+            conversationItem.classList.remove('bg-white');
+            conversationItem.classList.add('bg-primaryLight');
+
+            // Update username with unread count from server
+            if (usernameEl) {
+                const baseUsername = senderUsername;
+                const unreadCount = data.conversation_unread_count || 1;
+                usernameEl.textContent = `${baseUsername} (${unreadCount})`;
+            }
+
+            // Move to top
+            conversationList.insertBefore(conversationItem, conversationList.firstChild);
+        } else {
+            // Create new conversation item
+            const newConversation = document.createElement('a');
+            newConversation.href = `/messages/${senderId}`;
+            newConversation.className = 'block rounded-lg p-3 bg-primaryLight border border-secondaryLight hover:border-primary transition';
+            newConversation.setAttribute('data-user-id', senderId);
+
+            const now = new Date();
+            const timeStr = `${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${time}`;
+
+            const unreadCount = (data && data.conversation_unread_count) || 1;
+            newConversation.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-primary" data-unread-indicator></span>
+                        <span class="font-medium text-secondaryDark" data-username>${senderUsername} (${unreadCount})</span>
+                    </div>
+                    <span class="text-xs text-secondary" data-time>${timeStr}</span>
+                </div>
+                <p class="text-secondary text-sm mt-1 line-clamp-1" data-last-message>${escapeHtml(content)}</p>
+            `;
+
+            conversationList.insertBefore(newConversation, conversationList.firstChild);
+        }
+    }
+
+    // Handle unread count updates
+    socket.on('update_unread_count', function(data) {
+        console.log('Unread count updated:', data.count);
+
+        // Update the badge in navbar (if exists)
+        const badges = document.querySelectorAll('.absolute.bg-danger');
+        badges.forEach(badge => {
+            if (data.count > 0) {
+                badge.textContent = data.count <= 9 ? data.count : '9+';
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        });
+    });
+
+    // Utility function to escape HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Handle disconnection
+    socket.on('disconnect', function() {
+        console.log('Disconnected from WebSocket');
+    });
+})();
+</script>
 {% endblock %}

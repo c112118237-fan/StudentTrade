@@ -104,18 +104,27 @@ def handle_send_message(data):
     
     # 發送訊息到房間（包括發送者和接收者）
     emit('new_message', message_data, room=room)
-    
+
+    # 計算接收者與發送者之間的未讀訊息數量
+    from app.models.message import Message
+    conversation_unread = Message.query.filter_by(
+        sender_id=current_user.id,
+        receiver_id=int(receiver_id),
+        is_read=False
+    ).count()
+
     # 發送通知給接收者的個人房間（用於全站通知）
     receiver_room = f"user_{receiver_id}"
     notification_data = {
         'sender_id': message.sender_id,
         'sender_username': current_user.username,
         'content': message.content,
-        'created_at': message.created_at.strftime('%H:%M')
+        'created_at': message.created_at.strftime('%H:%M'),
+        'conversation_unread_count': conversation_unread
     }
     emit('new_message_notification', notification_data, room=receiver_room)
-    
-    # 更新未讀計數給接收者
+
+    # 更新總未讀計數給接收者
     unread_count = MessageService.get_unread_count(int(receiver_id))
     emit('update_unread_count', {'count': unread_count}, room=receiver_room)
 
