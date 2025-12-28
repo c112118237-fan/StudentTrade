@@ -50,8 +50,13 @@ erDiagram
         string username "使用者名稱"
         string phone "手機號碼"
         string student_id UK "學號（唯一）"
+        string department "系所"
+        text bio "個人簡介"
         string avatar_url "頭像網址"
         boolean is_active "帳號啟用狀態"
+        boolean is_verified "是否已驗證"
+        boolean is_deleted "軟刪除標記"
+        datetime last_login "最後登入時間"
         datetime created_at "建立時間"
         datetime updated_at "更新時間"
     }
@@ -59,10 +64,10 @@ erDiagram
     CATEGORIES {
         int id PK
         string name UK "分類名稱（唯一）"
-        string description "分類說明"
+        text description "分類說明"
         int parent_id FK "父分類 ID（可空）"
         int sort_order "排序順序"
-        datetime created_at
+        datetime created_at "建立時間"
     }
 
     PRODUCTS {
@@ -71,13 +76,15 @@ erDiagram
         int category_id FK "分類 ID"
         string title "商品標題"
         text description "商品描述"
-        decimal price "商品價格"
+        numeric price "商品價格"
         string condition "商品狀況"
         string status "商品狀態"
         string exchange_preference "交換偏好"
+        string location "交易地點"
+        string transaction_method "交易方式"
         int view_count "瀏覽次數"
-        datetime created_at
-        datetime updated_at
+        datetime created_at "建立時間"
+        datetime updated_at "更新時間"
     }
 
     PRODUCT_IMAGES {
@@ -86,7 +93,7 @@ erDiagram
         string image_url "圖片網址"
         boolean is_primary "是否為主圖"
         int sort_order "排序順序"
-        datetime created_at
+        datetime created_at "建立時間"
     }
 
     TRANSACTIONS {
@@ -95,10 +102,10 @@ erDiagram
         int buyer_id FK "買家 ID"
         int seller_id FK "賣家 ID"
         string status "交易狀態"
-        decimal amount "交易金額"
+        numeric amount "交易金額"
         string transaction_type "交易類型"
         text notes "備註"
-        datetime created_at
+        datetime created_at "建立時間"
         datetime completed_at "完成時間"
     }
 
@@ -106,10 +113,10 @@ erDiagram
         int id PK
         int sender_id FK "發送者 ID"
         int receiver_id FK "接收者 ID"
-        int product_id FK "相關商品 ID"
+        int product_id FK "相關商品 ID（可空）"
         text content "訊息內容"
         boolean is_read "是否已讀"
-        datetime created_at
+        datetime created_at "建立時間"
     }
 
     NOTIFICATIONS {
@@ -119,7 +126,7 @@ erDiagram
         text content "通知內容"
         string link "連結網址"
         boolean is_read "是否已讀"
-        datetime created_at
+        datetime created_at "建立時間"
     }
 
     REVIEWS {
@@ -129,7 +136,7 @@ erDiagram
         int reviewee_id FK "被評價者 ID"
         int rating "評分 (1-5)"
         text comment "評價內容"
-        datetime created_at
+        datetime created_at "建立時間"
     }
 ```
 
@@ -164,8 +171,13 @@ erDiagram
 | `username` | VARCHAR(80) | NOT NULL | 使用者名稱 |
 | `phone` | VARCHAR(20) | NULL | 手機號碼 |
 | `student_id` | VARCHAR(20) | UNIQUE, NULL | 學號 |
+| `department` | VARCHAR(120) | NULL | 系所 |
+| `bio` | TEXT | NULL | 個人簡介 |
 | `avatar_url` | VARCHAR(255) | NULL | 頭像圖片路徑 |
 | `is_active` | BOOLEAN | DEFAULT TRUE | 帳號啟用狀態 |
+| `is_verified` | BOOLEAN | DEFAULT FALSE | 是否已驗證（郵件驗證等） |
+| `is_deleted` | BOOLEAN | DEFAULT FALSE | 軟刪除標記 |
+| `last_login` | TIMESTAMP | NULL | 最後登入時間 |
 | `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | 建立時間 |
 | `updated_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP, ON UPDATE | 更新時間 |
 
@@ -178,10 +190,15 @@ CREATE TABLE users (
     username VARCHAR(80) NOT NULL,
     phone VARCHAR(20),
     student_id VARCHAR(20) UNIQUE,
+    department VARCHAR(120),
+    bio TEXT,
     avatar_url VARCHAR(255),
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    last_login TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 索引
@@ -258,6 +275,8 @@ INSERT INTO categories (name, description, parent_id, sort_order) VALUES
 | `condition` | VARCHAR(20) | NOT NULL | 商品狀況（全新/近全新/良好/普通） |
 | `status` | VARCHAR(20) | DEFAULT 'active' | 商品狀態（active/sold/deleted） |
 | `exchange_preference` | VARCHAR(200) | NULL | 交換偏好說明 |
+| `location` | VARCHAR(200) | NULL | 交易地點 |
+| `transaction_method` | VARCHAR(200) | NULL | 交易方式（面交/郵寄/其他） |
 | `view_count` | INTEGER | DEFAULT 0 | 瀏覽次數 |
 | `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | 建立時間 |
 | `updated_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP, ON UPDATE | 更新時間 |
@@ -270,13 +289,15 @@ CREATE TABLE products (
     category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
     title VARCHAR(200) NOT NULL,
     description TEXT NOT NULL,
-    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
+    price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
     condition VARCHAR(20) NOT NULL,
-    status VARCHAR(20) DEFAULT 'active',
+    status VARCHAR(20) NOT NULL DEFAULT 'active',
     exchange_preference VARCHAR(200),
-    view_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    location VARCHAR(200),
+    transaction_method VARCHAR(200),
+    view_count INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 索引
@@ -350,7 +371,7 @@ CREATE INDEX idx_product_images_primary ON product_images(product_id, is_primary
 | `seller_id` | INTEGER | FK(users.id), NOT NULL | 賣家 ID |
 | `status` | VARCHAR(20) | DEFAULT 'pending' | 交易狀態 |
 | `amount` | DECIMAL(10, 2) | NOT NULL | 交易金額 |
-| `transaction_type` | VARCHAR(20) | NOT NULL | 交易類型（purchase/exchange） |
+| `transaction_type` | VARCHAR(20) | NOT NULL | 交易類型（sale/exchange/free） |
 | `notes` | TEXT | NULL | 備註 |
 | `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | 建立時間 |
 | `completed_at` | TIMESTAMP | NULL | 完成時間 |
@@ -358,9 +379,27 @@ CREATE INDEX idx_product_images_primary ON product_images(product_id, is_primary
 **交易狀態說明**:
 - `pending` - 等待賣家回應
 - `accepted` - 賣家已接受
+- `in_progress` - 交易進行中
 - `rejected` - 賣家已拒絕
 - `completed` - 交易完成
 - `cancelled` - 交易取消
+- `disputed` - 爭議中
+
+**交易狀態流程圖**:
+```
+pending (待賣家回應)
+  ├─→ accepted (賣家接受)
+  │     └─→ in_progress (交易進行中)
+  │           ├─→ completed (已完成)
+  │           └─→ disputed (爭議中)
+  ├─→ rejected (已拒絕) [終態]
+  └─→ cancelled (已取消) [終態]
+```
+
+**交易類型說明**:
+- `sale` - 買賣交易（有金額）
+- `exchange` - 物品交換（可能無金額或象徵性金額）
+- `free` - 免費贈送（金額為0）
 
 **SQL 建表語句**:
 ```sql
@@ -369,25 +408,21 @@ CREATE TABLE transactions (
     product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
     buyer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     seller_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    status VARCHAR(20) DEFAULT 'pending',
-    amount DECIMAL(10, 2) NOT NULL CHECK (amount >= 0),
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    amount NUMERIC(10, 2) NOT NULL CHECK (amount >= 0),
     transaction_type VARCHAR(20) NOT NULL,
     notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP,
-    CONSTRAINT check_buyer_not_seller CHECK (buyer_id != seller_id)
+    CONSTRAINT check_buyer_not_seller CHECK (buyer_id != seller_id),
+    CONSTRAINT chk_transaction_status CHECK (status IN ('pending', 'accepted', 'in_progress', 'completed', 'cancelled', 'rejected', 'disputed')),
+    CONSTRAINT chk_transaction_type CHECK (transaction_type IN ('sale', 'exchange', 'free'))
 );
 
-CREATE INDEX idx_transactions_product ON transactions(product_id);
-CREATE INDEX idx_transactions_buyer ON transactions(buyer_id);
-CREATE INDEX idx_transactions_seller ON transactions(seller_id);
-CREATE INDEX idx_transactions_status ON transactions(status);
-
-ALTER TABLE transactions ADD CONSTRAINT check_transaction_status
-CHECK (status IN ('pending', 'accepted', 'rejected', 'completed', 'cancelled'));
-
-ALTER TABLE transactions ADD CONSTRAINT check_transaction_type
-CHECK (transaction_type IN ('purchase', 'exchange'));
+CREATE INDEX IF NOT EXISTS idx_transactions_product ON transactions(product_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_buyer ON transactions(buyer_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_seller ON transactions(seller_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_status ON transactions(status);
 ```
 
 ---
@@ -676,3 +711,72 @@ psql -U studenttrade_user -h localhost studenttrade < backup_20241129.sql
 請繼續閱讀：
 - [04-api-design.md](./04-api-design.md) - API 設計
 - [07-development-guide.md](./07-development-guide.md) - 開發指南
+
+---
+
+## 九、資料庫更新歷史
+
+### 9.1 最新更新（2025-12-29）
+
+#### USERS 表更新
+新增欄位：
+- `department` (VARCHAR(120)) - 系所資訊
+- `bio` (TEXT) - 個人簡介
+- `is_verified` (BOOLEAN) - 郵件驗證狀態
+- `is_deleted` (BOOLEAN) - 軟刪除標記
+- `last_login` (TIMESTAMP) - 最後登入時間
+
+#### PRODUCTS 表更新
+新增欄位：
+- `location` (VARCHAR(200)) - 交易地點
+- `transaction_method` (VARCHAR(200)) - 交易方式（面交/郵寄/其他）
+
+#### TRANSACTIONS 表更新
+新增狀態：
+- `in_progress` - 交易進行中狀態（在 accepted 和 completed 之間）
+- `disputed` - 爭議中狀態（處理交易糾紛）
+
+交易類型更新：
+- 從 `purchase` 改為 `sale`（語義更清晰）
+- 新增 `free` 類型（免費贈送）
+
+### 9.2 功能改進
+
+**交易流程優化**：
+- 新增中間狀態 `in_progress`，使交易流程更完整
+- 增加 `disputed` 狀態，支援糾紛處理
+- 完整的狀態轉換機制（見 [app/models/transaction.py](../app/models/transaction.py)）
+
+**使用者體驗增強**：
+- 支援個人簡介和系所資訊
+- 郵件驗證機制
+- 軟刪除功能（保留歷史資料）
+
+**商品資訊完善**：
+- 交易地點資訊（方便面交）
+- 交易方式說明（提高交易透明度）
+
+### 9.3 資料遷移注意事項
+
+如果從舊版本升級，請注意：
+
+1. **新增 NOT NULL 欄位已設定預設值**，無需手動處理
+2. **交易類型遷移**：舊的 `purchase` 需要更新為 `sale`
+   ```sql
+   UPDATE transactions SET transaction_type = 'sale' WHERE transaction_type = 'purchase';
+   ```
+3. **新增狀態約束**：確保現有交易狀態符合新的約束條件
+4. **建議執行**：
+   ```bash
+   # 使用 Flask-Migrate 進行資料庫遷移
+   flask db migrate -m "Add new fields to users and products tables"
+   flask db upgrade
+   ```
+
+### 9.4 資料庫版本
+
+| 版本 | 日期 | 主要變更 |
+|------|------|---------|
+| v1.0 | 2024-11 | 初始版本（8張表基礎架構） |
+| v1.1 | 2024-12 | 交易功能完善（狀態流程優化） |
+| **v1.2** | **2025-12-29** | **使用者資料擴充、商品資訊完善、交易流程強化** |
