@@ -70,3 +70,29 @@ def delete(id):
         flash(message, 'error')
 
     return redirect(url_for('notifications.index'))
+
+@bp.route('/api/recent', methods=['GET'])
+@login_required
+def get_recent():
+    """獲取最近的通知（API）"""
+    limit = request.args.get('limit', 10, type=int)
+
+    notifications = NotificationService.get_recent_notifications(
+        user_id=current_user.id,
+        limit=min(limit, 20)  # 最多20條
+    )
+
+    unread_count = NotificationService.get_unread_count(current_user.id)
+
+    return jsonify({
+        'success': True,
+        'notifications': [{
+            'id': n.id,
+            'type': n.type,
+            'content': n.content,
+            'link': n.link,
+            'is_read': n.is_read,
+            'created_at': n.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        } for n in notifications],
+        'unread_count': unread_count
+    })

@@ -154,6 +154,22 @@ class NotificationService:
         ).count()
 
     @staticmethod
+    def get_recent_notifications(user_id, limit=10):
+        """取得最近的通知
+
+        Args:
+            user_id: 使用者 ID
+            limit: 數量限制
+
+        Returns:
+            list: 通知列表
+        """
+        return Notification.query.filter_by(user_id=user_id)\
+            .order_by(Notification.created_at.desc())\
+            .limit(limit)\
+            .all()
+
+    @staticmethod
     def delete_notification(notification_id, user_id):
         """刪除通知
 

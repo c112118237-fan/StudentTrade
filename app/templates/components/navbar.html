@@ -44,25 +44,86 @@
                                 class="hidden absolute -top-1 -right-2 bg-danger text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1"></span>
                             {% endif %}
                 </a>
-                <a href="{{ url_for('notifications.index') if 'notifications' in globals() else '/notifications' }}"
-                    class="text-secondary text-sm font-medium relative inline-flex items-center gap-1 hover:text-primary"
-                    aria-label="通知">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z">
-                        </path>
-                    </svg>
-                    <span class="hidden md:inline">通知</span>
-                    {% if unread_notifications > 0 %}
-                    <span id="notification-badge"
-                        class="absolute -top-1 -right-2 bg-danger text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
-                        {{ unread_notifications if unread_notifications <= 9 else '9+' }}
-                    </span>
-                    {% else %}
-                    <span id="notification-badge"
-                        class="hidden absolute -top-1 -right-2 bg-danger text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1"></span>
-                    {% endif %}
-                </a>
+                <div class="relative" x-data="notificationDropdown()">
+                    <button @click="toggleDropdown()"
+                        class="text-secondary text-sm font-medium relative inline-flex items-center gap-1 hover:text-primary"
+                        aria-label="通知">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z">
+                            </path>
+                        </svg>
+                        <span class="hidden md:inline">通知</span>
+                        {% if unread_notifications > 0 %}
+                        <span id="notification-badge"
+                            class="absolute -top-1 -right-2 bg-danger text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                            {{ unread_notifications if unread_notifications <= 9 else '9+' }}
+                        </span>
+                        {% else %}
+                        <span id="notification-badge"
+                            class="hidden absolute -top-1 -right-2 bg-danger text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1"></span>
+                        {% endif %}
+                    </button>
+
+                    <!-- Notification Dropdown -->
+                    <div x-show="open" @click.away="open = false" x-transition
+                        class="absolute right-0 mt-2 bg-white rounded-lg shadow-dropdown w-96 max-h-[32rem] overflow-hidden z-50">
+                        <!-- Header -->
+                        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+                            <h3 class="font-semibold text-secondaryDark">通知</h3>
+                            <button @click="markAllRead()" class="text-xs text-primary hover:text-primaryHover">
+                                全部標示為已讀
+                            </button>
+                        </div>
+
+                        <!-- Notifications List -->
+                        <div class="overflow-y-auto max-h-96" style="scrollbar-width: thin;">
+                            <template x-if="loading">
+                                <div class="p-8 text-center text-secondary">
+                                    <svg class="animate-spin h-8 w-8 mx-auto text-primary" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <p class="mt-2">載入中...</p>
+                                </div>
+                            </template>
+
+                            <template x-if="!loading && notifications.length === 0">
+                                <div class="p-8 text-center text-secondary">
+                                    <svg class="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0h6z"></path>
+                                    </svg>
+                                    <p class="mt-2">尚無通知</p>
+                                </div>
+                            </template>
+
+                            <template x-for="notification in notifications" :key="notification.id">
+                                <a :href="notification.link || '#'"
+                                   @click="markAsRead(notification.id)"
+                                   class="block px-4 py-3 hover:bg-slate-100 transition border-b border-gray-100 last:border-b-0"
+                                   :class="{ 'bg-slate-50': !notification.is_read }">
+                                    <div class="flex items-start gap-3">
+                                        <div class="flex-shrink-0 mt-1">
+                                            <div class="w-2 h-2 rounded-full" :class="notification.is_read ? 'bg-gray-400' : 'bg-blue-600'"></div>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm text-slate-700" :class="{ 'font-semibold': !notification.is_read }" x-text="notification.content"></p>
+                                            <p class="text-xs text-slate-500 mt-1" x-text="formatTime(notification.created_at)"></p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </template>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="border-t border-gray-200 p-2">
+                            <a href="{{ url_for('notifications.index') if 'notifications' in globals() else '/notifications' }}"
+                               class="block text-center text-sm text-primary hover:text-primaryHover py-2">
+                                查看全部通知
+                            </a>
+                        </div>
+                    </div>
+                </div>
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open"
                         class="flex items-center gap-2 text-secondaryDark font-medium hover:text-primary transition">
@@ -148,3 +209,154 @@
         </div>
     </div>
 </nav>
+
+<script>
+function notificationDropdown() {
+    return {
+        open: false,
+        loading: false,
+        notifications: [],
+        socket: null,
+
+        init() {
+            // Initialize WebSocket connection if available
+            if (typeof io !== 'undefined') {
+                this.socket = io();
+                this.setupSocketListeners();
+            }
+        },
+
+        setupSocketListeners() {
+            if (!this.socket) return;
+
+            // Listen for new notifications
+            this.socket.on('new_notification', (data) => {
+                console.log('New notification received:', data);
+
+                // Add new notification to the top of the list
+                this.notifications.unshift({
+                    id: Date.now(), // Temporary ID
+                    type: data.type,
+                    content: data.content,
+                    link: data.link,
+                    is_read: false,
+                    created_at: data.created_at
+                });
+
+                // Keep only the latest 10 notifications
+                if (this.notifications.length > 10) {
+                    this.notifications = this.notifications.slice(0, 10);
+                }
+
+                // Reload to get accurate data with proper IDs
+                if (this.open) {
+                    this.loadNotifications();
+                }
+            });
+
+            // Listen for notification count updates
+            this.socket.on('update_notification_count', (data) => {
+                console.log('Notification count updated:', data.count);
+                this.updateBadge(data.count);
+            });
+        },
+
+        toggleDropdown() {
+            this.open = !this.open;
+            if (this.open) {
+                this.loadNotifications();
+            }
+        },
+
+        async loadNotifications() {
+            this.loading = true;
+            try {
+                const response = await fetch('/notifications/api/recent?limit=10');
+                const data = await response.json();
+                if (data.success) {
+                    this.notifications = data.notifications;
+                    this.updateBadge(data.unread_count);
+                }
+            } catch (error) {
+                console.error('Failed to load notifications:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async markAsRead(notificationId) {
+            try {
+                const response = await fetch(`/notifications/${notificationId}/read`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || ''
+                    }
+                });
+
+                if (response.ok) {
+                    // Update local state
+                    const notification = this.notifications.find(n => n.id === notificationId);
+                    if (notification) {
+                        notification.is_read = true;
+                    }
+                    // Update badge
+                    this.updateBadge();
+                }
+            } catch (error) {
+                console.error('Failed to mark as read:', error);
+            }
+        },
+
+        async markAllRead() {
+            try {
+                const response = await fetch('/notifications/read-all', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || ''
+                    }
+                });
+
+                if (response.ok) {
+                    // Mark all as read locally
+                    this.notifications.forEach(n => n.is_read = true);
+                    // Update badge
+                    this.updateBadge();
+                    // Reload to get fresh data
+                    await this.loadNotifications();
+                }
+            } catch (error) {
+                console.error('Failed to mark all as read:', error);
+            }
+        },
+
+        updateBadge(count = null) {
+            const unreadCount = count !== null ? count : this.notifications.filter(n => !n.is_read).length;
+            const badge = document.getElementById('notification-badge');
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount <= 9 ? unreadCount : '9+';
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        },
+
+        formatTime(timeStr) {
+            const date = new Date(timeStr);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000); // seconds
+
+            if (diff < 60) return '剛剛';
+            if (diff < 3600) return `${Math.floor(diff / 60)} 分鐘前`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)} 小時前`;
+            if (diff < 604800) return `${Math.floor(diff / 86400)} 天前`;
+
+            return date.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' });
+        }
+    }
+}
+</script>
